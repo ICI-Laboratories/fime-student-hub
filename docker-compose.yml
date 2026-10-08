@@ -1,7 +1,9 @@
+name: fime-pica
+
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: student-hub-postgres
+    container_name: fime-student-hub-postgres-1
     restart: always
     environment:
       POSTGRES_DB: ${DB_NAME:-pica_db}
@@ -22,7 +24,7 @@ services:
       retries: 5
   redis:
     image: redis:7-alpine
-    container_name: student-hub-redis
+    container_name: fime-student-hub-redis-1
     restart: always
     networks:
     - student-hub-network
@@ -32,7 +34,7 @@ services:
     build:
       context: ./services/professors-service
       dockerfile: Dockerfile
-    container_name: student-hub-professors-service
+    container_name: fime-student-hub-professors-service-1
     restart: always
     environment:
       DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASSWORD:-admin_pass}@postgres:5432/${DB_NAME:-pica_db}
@@ -48,7 +50,7 @@ services:
     build:
       context: ./services/academic-service
       dockerfile: Dockerfile
-    container_name: student-hub-academic-service
+    container_name: fime-student-hub-academic-service-1
     restart: always
     environment:
       DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASSWORD:-admin_pass}@postgres:5432/${DB_NAME:-pica_db}
@@ -62,7 +64,7 @@ services:
     build:
       context: ./services/reference-service
       dockerfile: Dockerfile
-    container_name: student-hub-reference-service
+    container_name: fime-student-hub-reference-service-1
     restart: always
     networks:
     - student-hub-network
@@ -73,7 +75,7 @@ services:
     build:
       context: ./services/cv-extractor-service
       dockerfile: Dockerfile
-    container_name: student-hub-cv-extractor-service
+    container_name: fime-student-hub-cv-extractor-service-1
     restart: always
     networks:
     - student-hub-network
@@ -81,7 +83,7 @@ services:
     build:
       context: ./services/landing
       dockerfile: Dockerfile
-    container_name: student-hub-landing
+    container_name: fime-student-hub-landing-1
     restart: always
     networks:
     - student-hub-network
@@ -91,7 +93,7 @@ services:
       dockerfile: services/student-hub/Dockerfile
       args:
         DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASSWORD:-admin_pass}@postgres:5432/${DB_NAME:-pica_db}
-    container_name: student-hub-frontend
+    container_name: fime-student-hub-web-1
     restart: always
     environment:
       DATABASE_URL: postgres://${DB_USER:-admin}:${DB_PASSWORD:-admin_pass}@postgres:5432/${DB_NAME:-pica_db}
@@ -117,7 +119,7 @@ services:
     build:
       context: ./services/proxy
       dockerfile: Dockerfile
-    container_name: student-hub-proxy
+    container_name: fime-student-hub-proxy-1
     restart: always
     ports:
     - ${HOST_PORT:-80}:80
@@ -137,7 +139,7 @@ services:
     build:
       context: ./services/fimebot-backend
       dockerfile: Dockerfile
-    container_name: student-hub-fimebot-backend
+    container_name: fime-student-hub-fimebot-backend-1
     restart: always
     environment:
       FIMEBOT_HYBRID_ENABLED: ${FIMEBOT_HYBRID_ENABLED:-true}
@@ -160,14 +162,14 @@ services:
       retries: 3
   tunnel:
     image: cloudflare/cloudflared:latest
-    container_name: student-hub-tunnel
+    container_name: fime-student-hub-tunnel-1
     restart: always
     network_mode: host
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
   portal:
     build: ./services/portal
     image: student-hub-portal:local
-    container_name: student-hub-portal
+    container_name: fime-student-hub-portal-1
     restart: unless-stopped
     environment:
       PORTAL_ORIGIN: https://fime.ici-labs.com
@@ -203,6 +205,7 @@ services:
     cap_drop:
     - ALL
   portal-redis:
+    container_name: fime-student-hub-portal-redis-1
     image: redis:7-alpine
     restart: unless-stopped
     command:
