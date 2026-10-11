@@ -47,8 +47,8 @@ def client():
         c.control = control
         yield c
 
-def authorize(client):
-    r = client.get('/session/login')
+def authorize(client, return_to=None):
+    r = client.get('/session/login', params={'return_to': return_to} if return_to is not None else {})
     assert r.status_code == 303
     query = parse_qs(urlparse(r.headers['location']).query)
     assert query['client_id'] == ['student-hub-web']
@@ -142,3 +142,48 @@ def test_identity_outage_preserves_refresh_for_retry(client):
     assert client.post('/session/refresh',headers={'Origin':main.ORIGIN}).status_code == 503
     client.control['refresh_failure'] = False
     assert client.post('/session/refresh',headers={'Origin':main.ORIGIN}).status_code == 200
+
+
+@pytest.mark.parametrize('destination, expected', [
+    ('/studenthub?category=Estudio#fimebot', '/studenthub?category=Estudio#fimebot'),
+    (main.ORIGIN + '/profesores?q=Juan%20Perez#publicaciones', '/profesores?q=Juan%20Perez#publicaciones'),
+    (main.ORIGIN, '/'),
+    ('https://other.invalid/aplicaciones', '/aplicaciones'),
+    ('//other.invalid', '/aplicaciones'),
+    ('/%2fother.invalid', '/aplicaciones'),
+    ('/%255cother.invalid', '/aplicaciones'),
+    ('/\\other.invalid', '/aplicaciones'),
+    ('/session/callback?code=old', '/aplicaciones'),
+    ('/studenthub/../session/login', '/aplicaciones'),
+    ('/api/apps', '/aplicaciones'),
+    ('/studenthub%0d%0aLocation:evil', '/aplicaciones'),
+])
+def test_login_preserves_only_safe_destinations_bound_to_attempt(client, destination, expected):
+    state = authorize(client, destination)
+    callback = client.get('/session/callback', params={
+        'state': state, 'code': 'test', 'return_to': 'https://other.invalid',
+    })
+    assert callback.status_code == 303
+    assert callback.headers['location'] == expected
+    assert client.get('/session/me').json()['user']['id'] == 'central-uuid'
+
+
+def test_global_account_destination_is_server_controlled(client):
+    response = client.get('/session/account?return_to=https://other.invalid')
+    assert response.status_code == 303
+    assert response.headers['location'] == main.AUTH_PORTAL + '/account'
+
+
+def test_identity_throttling_preserves_session_for_refresh_retry(client):
+    state = authorize(client)
+    assert client.get('/session/callback', params={'state': state, 'code': 'test'}).status_code == 303
+    client.control['expired'] = True
+    original = main.app.state.http._transport
+    def throttled(req):
+        if req.url.path == '/auth/refresh':
+            return httpx.Response(429)
+        return original.handler(req)
+    main.app.state.http._transport = httpx.MockTransport(throttled)
+    assert client.post('/session/refresh', headers={'Origin': main.ORIGIN}).status_code == 503
+    main.app.state.http._transport = original
+    assert client.post('/session/refresh', headers={'Origin': main.ORIGIN}).status_code == 200

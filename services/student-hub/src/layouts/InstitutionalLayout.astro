@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import SessionAccess from "../components/SessionAccess.astro";
 
 interface Props {
   title: string;
@@ -102,6 +103,7 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
           </a>
         )}
       </div>
+      <SessionAccess />
       <hr class="rule" />
     </header>
 
@@ -298,7 +300,7 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
   .no-script-navigation a { text-decoration: underline; }
   @media (max-width: 1199px) {
     body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
-    .site-header { display: none; }
+    .header-inner { display: none; }
     .mobile-nav {
       display: flex; position: fixed; bottom: 0; left: 0; right: 0;
       background: var(--color-surface); border-top: 1px solid var(--color-rule);

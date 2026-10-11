@@ -47,7 +47,7 @@ const count = apps.filter(app => matchesApp(app, query, category)).length;
     <aside class="account-note" aria-label="Información de acceso">
       <h2>El acceso académico sigue siendo libre</h2>
       <p>Horarios, mapa, profesores, materias y evaluaciones se consultan sin iniciar sesión. Las aplicaciones SARA indican cuándo necesitas tu cuenta central.</p>
-      <a href="https://auth.ici-labs.com">Gestionar mi cuenta SARA <span aria-hidden="true">→</span></a>
+      <a href="/session/login?return_to=%2Faplicaciones" data-sara-access-link data-login-label="Usar mi cuenta SARA →" data-account-label="Gestionar mi cuenta SARA →">Usar mi cuenta SARA <span aria-hidden="true">→</span></a>
     </aside>
   </section>
 </InstitutionalLayout>

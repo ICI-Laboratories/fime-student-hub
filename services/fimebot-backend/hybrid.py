@@ -18,7 +18,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from policy import Answer, KnowledgeBase, answer_question, career_topics, normalize, rejected
+from policy import Answer, CAREER_COMPARISON_FOLLOWUP, KnowledgeBase, answer_question, career_topics, normalize, rejected
 
 logger = logging.getLogger("fimebot.hybrid")
 _GATE = threading.BoundedSemaphore(2)
@@ -107,10 +107,11 @@ def _intent(question: str, history: list[str], knowledge: KnowledgeBase, determi
             return None
         queries.append(previous)
     combined = " ".join(queries)
-    compare = bool(_COMPARE.search(query))
+    contextual_comparison = bool(re.search(CAREER_COMPARISON_FOLLOWUP, query))
+    compare = bool(_COMPARE.search(query)) or contextual_comparison
     if not compare and not _GUIDANCE.search(query):
         return None
-    named = career_topics(combined)
+    named = list(deterministic.topics) if contextual_comparison else career_topics(combined)
     interests = [key for key, item in _INTERESTS.items() if re.search(item.pattern, combined)]
     for key in interests:
         # Be conservative until contrast/negation preferences have a dedicated
@@ -125,10 +126,11 @@ def _intent(question: str, history: list[str], knowledge: KnowledgeBase, determi
         return None
     candidates = list(named)
     # Represent each stated interest before adding secondary candidate degrees.
-    for key in interests:
-        candidates.append(_INTERESTS[key].careers[0])
-    for key in interests:
-        candidates.extend(_INTERESTS[key].careers[1:])
+    if not contextual_comparison:
+        for key in interests:
+            candidates.append(_INTERESTS[key].careers[0])
+        for key in interests:
+            candidates.extend(_INTERESTS[key].careers[1:])
     candidates = list(dict.fromkeys(topic for topic in candidates if topic in knowledge.entries))[:3]
     if not candidates or (compare and len(candidates) < 2):
         return None

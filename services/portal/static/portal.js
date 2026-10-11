@@ -21,21 +21,57 @@ document.querySelectorAll('[data-category]').forEach(b => b.addEventListener('cl
 }));
 document.querySelector('#search').addEventListener('input', render);
 fetch('/api/apps').then(r => { if (!r.ok) throw Error(); return r.json(); }).then(data => { apps = data; render(); }).catch(() => grid.replaceChildren(node('p', 'No se pudo cargar el catálogo. Recarga la página para intentar de nuevo.')));
+let authenticated = false, sessionRun = 0, leaving = false;
+const loginLink = document.querySelector('#login');
+function updateAccessLink() {
+  loginLink.href = authenticated ? '/session/account' : `/session/login?${new URLSearchParams({return_to: location.pathname + location.search + location.hash})}`;
+  loginLink.textContent = authenticated ? 'Mi cuenta SARA ↗' : 'Iniciar sesión ↗';
+}
+updateAccessLink();
+loginLink.addEventListener('click', updateAccessLink);
+window.addEventListener('hashchange', updateAccessLink);
 async function session() {
+  if (leaving) return;
+  const run = ++sessionRun;
   try {
     let r = await fetch('/session/me');
-    if (r.status === 401) { const renewed = await fetch('/session/refresh', {method:'POST'}); if (renewed.ok) r = await fetch('/session/me'); }
+    if (r.status === 401) {
+      const renewed = await fetch('/session/refresh', {method:'POST'});
+      r = renewed.ok ? await fetch('/session/me') : renewed;
+    }
+    if (run !== sessionRun) return;
     if (r.ok) {
-      const {user} = await r.json(); document.querySelector('#welcome').textContent = `Hola, ${user.name || 'bienvenido'}. Elige una herramienta para comenzar.`;
-      document.querySelector('#login').hidden = true; document.querySelector('#logout').hidden = false;
-    } else if (r.status !== 401) document.querySelector('#welcome').textContent = 'No pudimos verificar tu sesión. Intenta de nuevo en unos momentos.';
-  } catch { document.querySelector('#welcome').textContent = 'No pudimos conectar con el servicio de acceso.'; }
+      const {user} = await r.json();
+      if (run !== sessionRun) return;
+      authenticated = true;
+      document.querySelector('#welcome').textContent = `Hola, ${user.name || user.email || 'bienvenido'}. Esta es tu cuenta SARA en todas las aplicaciones.`;
+      document.querySelector('#logout').hidden = false;
+      document.querySelector('#session-retry').hidden = true;
+    } else if (r.status === 401 || r.status === 403) {
+      authenticated = false;
+      document.querySelector('#welcome').textContent = 'Una cuenta SARA para tus herramientas académicas.';
+      document.querySelector('#logout').hidden = true;
+      document.querySelector('#session-retry').hidden = true;
+    } else {
+      document.querySelector('#welcome').textContent = 'El servicio de acceso no responde por ahora. Puedes volver a comprobar tu sesión.';
+      document.querySelector('#session-retry').hidden = false;
+    }
+    updateAccessLink();
+  } catch {
+    if (run !== sessionRun) return;
+    document.querySelector('#welcome').textContent = 'No pudimos conectar con el servicio de acceso. Puedes volver a intentarlo.';
+    document.querySelector('#session-retry').hidden = false;
+  }
 }
 session();
+document.querySelector('#session-retry').addEventListener('click', session);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) void session(); });
 document.querySelector('#logout').addEventListener('click', async (event) => {
+  leaving = true;
+  ++sessionRun;
   event.target.disabled = true;
   try { const r = await fetch('/session/logout', {method:'POST'}); if (!r.ok) throw Error(); location.reload(); }
-  catch { document.querySelector('#welcome').textContent = 'No se pudo confirmar el cierre de sesión. Intenta de nuevo.'; event.target.disabled = false; }
+  catch { document.querySelector('#welcome').textContent = 'No se pudo confirmar el cierre de sesión. Intenta de nuevo.'; event.target.disabled = false; leaving = false; }
 });
 const conversation = document.querySelector('#conversation');
 document.querySelector('#chat-form').addEventListener('submit', async event => {

@@ -25,6 +25,14 @@ def envelope(value=VALID):
 
 
 class HybridTests(unittest.IsolatedAsyncioTestCase):
+    def test_relative_comparison_preserves_the_two_discussed_candidates(self):
+        question = '¿Cuál de las dos tiene más programación?'
+        history = ['Compara ICI y Mecatrónica']
+        intent = _intent(question, history, KB, answer_question(question, history, KB))
+        self.assertEqual(intent.mode, 'comparison')
+        self.assertEqual(intent.topics, ('ici', 'mechatronics'))
+        self.assertEqual(intent.interests, ('programming',))
+
     async def call(self, responder, question=QUESTION, history=None):
         history = history or []
         return await responder.answer(question, history, KB, answer_question(question, history, KB))

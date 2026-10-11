@@ -32,9 +32,12 @@ const allPubs = [
   
   <!-- Buscador e Interfaz de Filtros -->
   <div class="space-y-4">
+    <label for="pub-search" class="field-label">Buscar publicaciones</label>
     <input 
-      type="text" 
+      type="search"
       id="pub-search" 
+      disabled={allPubs.length === 0}
+      aria-controls="publications-list"
       placeholder="Buscar por título, revista, editorial o año..." 
       class="w-full h-11 bg-ground border-none px-0 text-sm font-sans text-ink focus:outline-none placeholder:text-ink-3"
     />
@@ -43,33 +46,39 @@ const allPubs = [
       <button 
         class="filter-btn font-mono text-2xs uppercase tracking-wider font-black text-ink pb-1 border-b-2 border-primary cursor-pointer transition-all"
         data-filter="all"
+        aria-pressed="true"
       >
         Todos
       </button>
       <button 
         class="filter-btn font-mono text-2xs uppercase tracking-wider font-bold text-ink-3 pb-1 border-b-2 border-transparent cursor-pointer transition-all hover:text-ink"
         data-filter="article"
+        aria-pressed="false"
       >
         Artículos
       </button>
       <button 
         class="filter-btn font-mono text-2xs uppercase tracking-wider font-bold text-ink-3 pb-1 border-b-2 border-transparent cursor-pointer transition-all hover:text-ink"
         data-filter="book"
+        aria-pressed="false"
       >
         Libros
       </button>
     </div>
   </div>
+  <p id="publication-status" role="status" aria-live="polite" aria-atomic="true" class="text-xs text-ink-3">
+    {allPubs.length ? `${allPubs.length} publicaciones registradas.` : 'No hay publicaciones registradas en este directorio.'}
+  </p>
 
   <!-- Contenedor Principal de Publicaciones (Lista bibliográfica suiza) -->
   <div id="publications-list" class="space-y-6">
     {allPubs.map(pub => (
       <div 
         class="pub-item border-b border-rule pb-6 flex flex-col md:flex-row md:items-start gap-4"
-        data-title={pub.title.toLowerCase()}
+        data-title={String(pub.title || '')}
         data-type={pub.type}
-        data-journal={pub.type === 'article' ? pub.journal.toLowerCase() : pub.editorial.toLowerCase()}
-        data-year={pub.year.toString()}
+        data-journal={String(pub.type === 'article' ? pub.journal || '' : pub.editorial || '')}
+        data-year={String(pub.year || '')}
       >
         <!-- Año y Tipo -->
         <div class="w-24 shrink-0 flex items-center md:flex-col md:items-start gap-2">
@@ -88,9 +97,9 @@ const allPubs = [
           </h4>
           <p class="text-xs text-ink-2 leading-relaxed">
             {pub.type === 'article' ? (
-              <span>Publicado en <span class="italic font-medium">{pub.journal}</span>.</span>
+              <span>{pub.journal ? <>Publicado en <span class="italic font-medium">{pub.journal}</span>.</> : 'Revista no registrada.'}</span>
             ) : (
-              <span>Libro publicado por <span class="italic font-medium">{pub.editorial}</span>. Rol: {pub.role}.</span>
+              <span>{pub.editorial ? <>Libro publicado por <span class="italic font-medium">{pub.editorial}</span>.</> : 'Editorial no registrada.'}{pub.role && <> Rol: {pub.role}.</>}</span>
             )}
           </p>
           
@@ -112,7 +121,8 @@ const allPubs = [
       id="no-resultados" 
       class="hidden text-center py-12 text-xs italic text-ink-3 bg-muted"
     >
-      No se encontraron publicaciones que coincidan con los filtros de búsqueda.
+      <p>No se encontraron publicaciones que coincidan con los filtros de búsqueda.</p>
+      <button id="publication-clear" type="button" class="btn" style="margin-top: 12px;">Limpiar filtros</button>
     </div>
   </div>
 
@@ -125,13 +135,16 @@ const allPubs = [
     const filterBtns = document.querySelectorAll('.filter-btn');
     const publicationsList = document.getElementById('publications-list');
     const noResultados = document.getElementById('no-resultados');
+    const status = document.getElementById('publication-status');
 
-    if (!searchInput || !publicationsList) return;
+    if (!searchInput || !publicationsList || searchInput.dataset.ready) return;
+    searchInput.dataset.ready = 'true';
 
     let activeFilter = 'all';
+    const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').trim();
 
     function filterPublications() {
-      const query = searchInput.value.toLowerCase().trim();
+      const terms = normalize(searchInput!.value).split(/\s+/).filter(Boolean);
       const items = publicationsList.querySelectorAll('.pub-item');
       let matchesCount = 0;
 
@@ -141,7 +154,8 @@ const allPubs = [
         const year = item.getAttribute('data-year') || '';
         const type = item.getAttribute('data-type') || '';
 
-        const matchesSearch = title.includes(query) || journal.includes(query) || year.includes(query);
+        const text = normalize(`${title} ${journal} ${year}`);
+        const matchesSearch = terms.every(term => text.includes(term));
         const matchesType = activeFilter === 'all' || type === activeFilter;
 
         if (matchesSearch && matchesType) {
@@ -153,7 +167,8 @@ const allPubs = [
       });
 
       // Validar si hubo coincidencias
-      if (matchesCount === 0) {
+      if (status && items.length) status.textContent = `${matchesCount} de ${items.length} publicaciones coinciden.`;
+      if (matchesCount === 0 && items.length > 0) {
         noResultados?.classList.remove('hidden');
       } else {
         noResultados?.classList.add('hidden');
@@ -167,15 +182,23 @@ const allPubs = [
         filterBtns.forEach(b => {
           b.classList.remove('border-primary', 'font-black', 'text-ink');
           b.classList.add('border-transparent', 'font-bold', 'text-ink-3');
+          b.setAttribute('aria-pressed', 'false');
         });
 
         btn.classList.add('border-primary', 'font-black', 'text-ink');
         btn.classList.remove('border-transparent', 'font-bold', 'text-ink-3');
+        btn.setAttribute('aria-pressed', 'true');
 
         activeFilter = btn.getAttribute('data-filter') || 'all';
         filterPublications();
       });
     });
+    document.getElementById('publication-clear')?.addEventListener('click', () => {
+      searchInput.value = '';
+      (document.querySelector('[data-filter="all"]') as HTMLButtonElement)?.click();
+      searchInput.focus();
+    });
+    filterPublications();
   }
 
   // Ejecutar en carga de página y transiciones Astro

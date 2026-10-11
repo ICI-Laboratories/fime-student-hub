@@ -1,0 +1,27 @@
+---
+const destination = Astro.url.pathname + Astro.url.search;
+const loginUrl = `/session/login?${new URLSearchParams({ return_to: destination })}`;
+---
+<section class="sara-access" data-sara-session aria-label="Cuenta SARA">
+  <p class="sara-access__status" data-sara-status role="status" aria-live="polite">Tu cuenta SARA</p>
+  <div class="sara-access__actions">
+    <a href={loginUrl} data-sara-access-link>Iniciar sesión</a>
+    <button type="button" data-sara-logout hidden>Salir del portal</button>
+    <button type="button" data-sara-retry hidden>Reintentar acceso</button>
+  </div>
+</section>
+<script>
+  import { setupSessionAccess } from '../lib/session-access';
+  setupSessionAccess();
+  document.addEventListener('astro:page-load', setupSessionAccess);
+</script>
+<style>
+  .sara-access { max-width: 1280px; margin: 0 auto; padding: 8px 24px; display: flex; align-items: center; justify-content: space-between; gap: 8px 20px; border-top: 1px solid var(--color-rule); }
+  .sara-access__status { margin: 0; min-width: 0; font-size: .8125rem; line-height: 1.5; color: var(--color-ink-2); overflow-wrap: anywhere; }
+  .sara-access__actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 4px 12px; flex-shrink: 0; }
+  a, button { display: inline-flex; align-items: center; min-height: 40px; padding: 6px 0; background: none; border: 0; color: var(--color-primary); font: inherit; font-size: .8125rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  button:disabled { opacity: .65; cursor: wait; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .sara-access { padding: 8px 16px; flex-wrap: wrap; gap: 0 12px; } .sara-access__actions { flex-shrink: 1; } }
+</style>

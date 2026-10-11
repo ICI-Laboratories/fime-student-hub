@@ -139,6 +139,11 @@ FOLLOWUP_PATTERN = (
     r"donde puedo trabajar|(?:su |el )?campo laboral|que salidas tiene|mas informacion|"
     r"dime mas|cuentame mas|mas detalles|y esa|y esta|y sus requisitos)[\s?!¿¡.,]*$"
 )
+CAREER_COMPARISON_FOLLOWUP = (
+    r"^[¿¡\s]*(?:y\s+)?(?:cual(?:es)? (?:de (?:las|esas) (?:dos|tres)|de ambas)|"
+    r"(?:compara|diferencias? entre) (?:esas carreras|ambas|las dos)|"
+    r"cual (?:tiene mas|se enfoca mas en))\b"
+)
 
 
 def rejected(query: str) -> bool:
@@ -205,7 +210,7 @@ def previous_topics(history: list[str]) -> list[str]:
         topics = explicit_topics(query)
         if topics:
             return topics
-        if not matches(FOLLOWUP_PATTERN, query):
+        if not matches(FOLLOWUP_PATTERN, query) and not matches(CAREER_COMPARISON_FOLLOWUP, query):
             return []
     return []
 
@@ -227,7 +232,16 @@ def answer_question(question: str, history: list[str], knowledge: KnowledgeBase)
     if social in {"gracias", "muchas gracias", "ok", "vale", "perfecto", "adios", "hasta luego"}:
         return Answer("Con gusto. Aquí puedes consultar información de la FIME cuando la necesites.", [], [])
 
-    topics = explicit_topics(query)
+    # Relative comparisons refer to the most recent career discussion. Resolve
+    # only reviewed topic IDs, never facts from an assistant's previous text.
+    is_comparison_followup = matches(CAREER_COMPARISON_FOLLOWUP, query) and not career_topics(query)
+    if is_comparison_followup:
+        topics = [topic for topic in previous_topics(history) if topic in CAREER_PATTERNS]
+        if len(topics) < 2:
+            return Answer("¿Qué carreras de la FIME quieres comparar? Escribe sus nombres, "
+                          "por ejemplo, «Compara ICI y Mecatrónica».", [], [])
+    else:
+        topics = explicit_topics(query)
     if not topics and matches(FOLLOWUP_PATTERN, query):
         topics = previous_topics(history)
         if not topics:
@@ -260,4 +274,7 @@ def answer_question(question: str, history: list[str], knowledge: KnowledgeBase)
                 seen_urls.add(source["url"])
         sections.append("Fuentes oficiales: " + " · ".join(entry_links))
     content = "\n\n".join(sections)
+    if is_comparison_followup:
+        content = ("Retomo las carreras que mencionaste. Estas fichas permiten comparar su formación y campo laboral; "
+                   "no cuento con una medida verificada para afirmar cuál tiene más de una materia.\n\n" + content)
     return Answer(content, [entry.id for entry in selected], sources)

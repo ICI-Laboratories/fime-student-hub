@@ -2,10 +2,11 @@
 import hashlib
 import json
 import os
+import posixpath
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import unquote, urlencode, urlsplit, urlunsplit
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
@@ -59,6 +60,39 @@ def csrf(request):
         raise HTTPException(403, "Origen no permitido.")
 
 
+def return_destination(value):
+    """Keep navigation within the product, outside authentication/API routes."""
+    fallback = "/aplicaciones"
+    if not value or len(value) > 2048:
+        return fallback
+    decoded = value
+    for _ in range(4):
+        if any(ord(char) < 32 or ord(char) == 127 for char in decoded) or "\\" in decoded:
+            return fallback
+        if decoded.startswith("//"):
+            return fallback
+        try:
+            target = urlsplit(decoded)
+        except ValueError:
+            return fallback
+        if target.scheme or target.netloc:
+            if f"{target.scheme}://{target.netloc}" != ORIGIN:
+                return fallback
+        elif not target.path.startswith("/"):
+            return fallback
+        normalized = posixpath.normpath(target.path or "/")
+        if normalized.startswith("//") or normalized.split("/")[1] in {"session", "auth", "api", "static", "login"}:
+            return fallback
+        next_decoded = unquote(decoded)
+        if next_decoded == decoded:
+            break
+        decoded = next_decoded
+    else:
+        return fallback
+    original = urlsplit(value)
+    return urlunsplit(("", "", original.path or "/", original.query, original.fragment))
+
+
 async def throttle(request, bucket, limit):
     # Do not trust visitor-supplied forwarded headers. Aggregate cap behind tunnel.
     key = f"rate:{bucket}:{digest(request.client.host)}"
@@ -100,6 +134,11 @@ async def apps():
     return APPS
 
 
+@app.get("/session/account")
+async def account():
+    return RedirectResponse(AUTH_PORTAL + "/account", status_code=303)
+
+
 @app.get("/login")
 @app.get("/session/login")
 async def login(request: Request):
@@ -109,7 +148,10 @@ async def login(request: Request):
     state, verifier, browser = secrets.token_urlsafe(32), secrets.token_urlsafe(64), secrets.token_urlsafe(32)
     import base64
     challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
-    await request.app.state.redis.set("attempt:" + digest(state), json.dumps({"browser": digest(browser), "verifier": verifier}), ex=600)
+    await request.app.state.redis.set("attempt:" + digest(state), json.dumps({
+        "browser": digest(browser), "verifier": verifier,
+        "return_to": return_destination(request.query_params.get("return_to")),
+    }), ex=600)
     response = RedirectResponse(AUTH_PORTAL + "/authorize?" + urlencode({
         "response_type": "code", "client_id": CLIENT, "redirect_uri": CALLBACK,
         "state": state, "code_challenge": challenge, "code_challenge_method": "S256",
@@ -164,7 +206,7 @@ async def callback(request: Request, state: str = "", code: str = ""):
             await revoke(request, json.loads(old_raw))
     sid = secrets.token_urlsafe(48)
     await request.app.state.redis.set("session:" + digest(sid), json.dumps(data), ex=2592000)
-    response = RedirectResponse("/aplicaciones", status_code=303)
+    response = RedirectResponse(return_destination(attempt.get("return_to")), status_code=303)
     clear(response, ATTEMPT)
     cookie(response, COOKIE, sid, 2592000)
     return response
@@ -182,7 +224,7 @@ async def me(request: Request):
     if not result.is_success:
         raise HTTPException(503 if result.status_code >= 500 else 403, "No se pudo verificar la sesión.")
     user = result.json()
-    return {"user": {k: user.get(k) for k in ("id", "name", "email")}}
+    return {"user": {k: user.get(k) for k in ("id", "name", "email")}, "account_url": "/session/account"}
 
 
 @app.post("/session/refresh")
@@ -205,7 +247,8 @@ async def refresh(request: Request):
         if not result.is_success:
             if result.status_code in (400, 401, 403):
                 await request.app.state.redis.delete(key)
-            raise HTTPException(401 if result.status_code < 500 else 503, "No se pudo renovar la sesión.")
+            temporary = result.status_code == 429 or result.status_code >= 500
+            raise HTTPException(503 if temporary else 401, "No se pudo renovar la sesión.")
         grant = result.json()
         data.update(access_token=grant["access_token"], refresh_token=grant["refresh_token"])
         await request.app.state.redis.set(key, json.dumps(data), ex=2592000)

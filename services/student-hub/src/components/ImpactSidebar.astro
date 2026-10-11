@@ -28,7 +28,7 @@ const currentYear = new Date().getFullYear();
 const yearsOfService = currentYear - admissionYear;
 
 // Contar artículos JCR
-const jcrArticlesCount = articles.filter(art => art.impactFactor !== null).length;
+const jcrArticlesCount = articles.filter(art => typeof art.impactFactor === 'number' && Number.isFinite(art.impactFactor)).length;
 const totalArticlesCount = articles.length;
 const thesesCount = theses.length;
 ---
@@ -50,20 +50,20 @@ const thesesCount = theses.length;
     )}
 
     <!-- Artículos JCR / Totales -->
-    <div>
+    {totalArticlesCount > 0 ? <div>
       <div class="text-3xl font-black text-ink font-mono tracking-tighter">
         {jcrArticlesCount}<span class="text-base font-normal text-ink-3"> / {totalArticlesCount}</span>
       </div>
-      <span class="field-label mt-1">Artículos JCR / Indexados</span>
-    </div>
+      <span class="field-label mt-1">Con factor de impacto / Artículos registrados</span>
+    </div> : <p class="text-xs text-ink-3">No hay publicaciones registradas en este directorio.</p>}
 
     <!-- Tesis dirigidas -->
-    <div>
+    {thesesCount > 0 ? <div>
       <div class="text-3xl font-black text-ink font-mono tracking-tighter">
         {thesesCount}
       </div>
       <span class="field-label mt-1">Tesis Asesoradas</span>
-    </div>
+    </div> : <p class="text-xs text-ink-3">No hay tesis registradas en este directorio.</p>}
 
     <!-- Cuerpo Académico -->
     {academicBody && (

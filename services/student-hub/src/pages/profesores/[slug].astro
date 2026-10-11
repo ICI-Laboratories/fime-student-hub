@@ -38,20 +38,21 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
 
 <InstitutionalLayout
   title={fullName}
-  description={`Perfil académico de ${fullName}, ${title} del departamento de ${department}.`}
+  description={`Perfil académico de ${[fullName, title, department].filter(Boolean).join(", ")}.`}
 >
+  <a href="/profesores?from=landing" class="link" style="display: inline-block; margin-bottom: 20px;">← Volver al directorio de profesores</a>
   <div class="max-w-5xl mx-auto space-y-6 lg:space-y-0 lg:grid lg:grid-cols-10 lg:gap-6 items-start">
     
     <!-- Columna Lateral Izquierda (Perfil + Indicadores): lg:col-span-3 -->
     <div class="accordion-item border-b border-rule lg:border-none lg:col-span-3 bg-surface lg:bg-transparent">
       <!-- Encabezado Acordeón Móvil (Solo visible en móviles) -->
-      <button class="accordion-header lg:hidden w-full flex justify-between items-center py-4 px-4 bg-muted font-sans text-xs uppercase tracking-wider font-bold text-ink cursor-pointer border-t border-rule">
+      <button type="button" aria-expanded="true" aria-controls="profile-details" class="accordion-header lg:hidden w-full flex justify-between items-center py-4 px-4 bg-muted font-sans text-xs uppercase tracking-wider font-bold text-ink cursor-pointer border-t border-rule">
         <span>Perfil e Indicadores</span>
         <span class="accordion-icon font-mono font-bold text-sm">−</span>
       </button>
 
       <!-- Contenido (Abierto por defecto en móvil, visible siempre en desktop) -->
-      <div class="accordion-content p-4 lg:p-0 space-y-6 transition-all duration-200">
+      <div id="profile-details" class="accordion-content p-4 lg:p-0 space-y-6 transition-all duration-200">
         <IdentityCard
           fullName={fullName}
           title={title}
@@ -73,13 +74,13 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
     <!-- Columna Principal Derecha (Logros y Trayectoria): lg:col-span-7 -->
     <div class="accordion-item border-b border-rule lg:border-none lg:col-span-7 bg-surface lg:bg-transparent">
       <!-- Encabezado Acordeón Móvil (Solo visible en móviles) -->
-      <button class="accordion-header lg:hidden w-full flex justify-between items-center py-4 px-4 bg-muted font-sans text-xs uppercase tracking-wider font-bold text-ink cursor-pointer border-t border-rule">
+      <button type="button" aria-expanded="false" aria-controls="profile-achievements" class="accordion-header lg:hidden w-full flex justify-between items-center py-4 px-4 bg-muted font-sans text-xs uppercase tracking-wider font-bold text-ink cursor-pointer border-t border-rule">
         <span>Trayectoria y Logros</span>
         <span class="accordion-icon font-mono font-bold text-sm">+</span>
       </button>
 
       <!-- Contenido (Cerrado por defecto en móvil, visible siempre en desktop) -->
-      <div class="accordion-content p-4 lg:p-0 hidden lg:block space-y-6">
+      <div id="profile-achievements" class="accordion-content p-4 lg:p-0 hidden lg:block space-y-6">
         {biography && (
           <div class="prose prose-sm sm:prose-base max-w-none text-ink mb-8">
             <h2 class="font-bold text-xl sm:text-2xl text-primary mb-4 mt-0">Quién es {primerNombre}</h2>
@@ -95,17 +96,17 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
             <!-- Pestañas (Tabs) con Altura Fija y Scroll Interno -->
             <div class="bg-ground flex flex-col h-[622px]">
           <!-- Encabezado de Pestañas -->
-          <div class="flex font-mono text-[10px] sm:text-xs uppercase tracking-wider font-bold bg-ground">
-            <button class="tab-btn px-4 h-11 flex items-center justify-center hover:text-primary border-b-2 border-primary text-primary cursor-pointer transition-all duration-120" data-tab="publicaciones">
+          <div role="tablist" aria-label="Trayectoria académica" class="flex flex-wrap font-mono text-[10px] sm:text-xs uppercase tracking-wider font-bold bg-ground">
+            <button class="tab-btn px-4 h-11 flex items-center justify-center hover:text-primary border-b-2 border-primary text-primary cursor-pointer transition-all duration-120" data-tab="publicaciones" type="button" role="tab" id="tab-publicaciones" aria-controls="panel-publicaciones" aria-selected="true" tabindex="0">
               Publicaciones
             </button>
-            <button class="tab-btn px-4 h-11 flex items-center justify-center hover:text-primary border-b-2 border-transparent text-ink-3 cursor-pointer transition-all duration-120" data-tab="materias">
+            <button class="tab-btn px-4 h-11 flex items-center justify-center hover:text-primary border-b-2 border-transparent text-ink-3 cursor-pointer transition-all duration-120" data-tab="materias" type="button" role="tab" id="tab-materias" aria-controls="panel-materias" aria-selected="false" tabindex="-1">
               Materias
             </button>
-            <button class="tab-btn px-4 h-11 flex items-center justify-center hover:text-primary border-b-2 border-transparent text-ink-3 cursor-pointer transition-all duration-120" data-tab="tesis">
+            <button class="tab-btn px-4 h-11 flex items-center justify-center hover:text-primary border-b-2 border-transparent text-ink-3 cursor-pointer transition-all duration-120" data-tab="tesis" type="button" role="tab" id="tab-tesis" aria-controls="panel-tesis" aria-selected="false" tabindex="-1">
               Tesis
             </button>
-            <button class="tab-btn px-4 h-11 flex items-center justify-center hover:text-primary border-b-2 border-transparent text-ink-3 cursor-pointer transition-all duration-120" data-tab="recursos">
+            <button class="tab-btn px-4 h-11 flex items-center justify-center hover:text-primary border-b-2 border-transparent text-ink-3 cursor-pointer transition-all duration-120" data-tab="recursos" type="button" role="tab" id="tab-recursos" aria-controls="panel-recursos" aria-selected="false" tabindex="-1">
               Materiales y Cert.
             </button>
           </div>
@@ -113,7 +114,7 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
           <!-- Contenedores de Paneles con Scroll Interno -->
           <div class="py-6 px-0 overflow-y-auto scroll flex-1">
             <!-- Panel 1: Publicaciones -->
-            <div class="tab-panel" id="panel-publicaciones">
+            <div class="tab-panel" id="panel-publicaciones" role="tabpanel" aria-labelledby="tab-publicaciones" tabindex="0">
               <PublicationList
                 articles={scientificProduction?.articles || []}
                 books={scientificProduction?.books || []}
@@ -121,7 +122,7 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
             </div>
 
             <!-- Panel 2: Materias -->
-            <div class="tab-panel hidden" id="panel-materias">
+            <div class="tab-panel hidden" id="panel-materias" role="tabpanel" aria-labelledby="tab-materias" tabindex="0">
               <TeachingList
                 courses={teaching?.courses || []}
                 showOnly="courses"
@@ -129,7 +130,7 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
             </div>
 
             <!-- Panel 3: Tesis -->
-            <div class="tab-panel hidden" id="panel-tesis">
+            <div class="tab-panel hidden" id="panel-tesis" role="tabpanel" aria-labelledby="tab-tesis" tabindex="0">
               <TeachingList
                 theses={teaching?.theses || []}
                 showOnly="theses"
@@ -137,7 +138,7 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
             </div>
 
             <!-- Panel 4: Recursos y Certificaciones -->
-            <div class="tab-panel hidden space-y-6" id="panel-recursos">
+            <div class="tab-panel hidden space-y-6" id="panel-recursos" role="tabpanel" aria-labelledby="tab-recursos" tabindex="0">
               <div class="space-y-6">
                 <!-- Materiales Didácticos -->
                 <div>
@@ -215,7 +216,18 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
   <!-- Script Vanilla JS para Interactividad -->
   <script>
     function setupTabs() {
-      document.querySelectorAll(".tab-btn").forEach((btn) => {
+      document.querySelectorAll<HTMLButtonElement>(".tab-btn").forEach((btn) => {
+        if (btn.dataset.ready) return;
+        btn.dataset.ready = "true";
+        btn.addEventListener("keydown", (event) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          const tabs = [...(btn.parentElement?.querySelectorAll<HTMLButtonElement>(".tab-btn") || [])];
+          const index = tabs.indexOf(btn);
+          const target = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+          tabs[target]?.click();
+          tabs[target]?.focus();
+        });
         btn.addEventListener("click", () => {
           const tabContainer = btn.closest(".accordion-content");
           if (!tabContainer) return;
@@ -223,10 +235,14 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
           tabContainer.querySelectorAll(".tab-btn").forEach((b) => {
             b.classList.remove("text-primary", "border-primary");
             b.classList.add("border-transparent", "text-ink-3");
+            b.setAttribute("aria-selected", "false");
+            b.setAttribute("tabindex", "-1");
           });
 
           btn.classList.add("text-primary", "border-primary");
           btn.classList.remove("border-transparent", "text-ink-3");
+          btn.setAttribute("aria-selected", "true");
+          btn.tabIndex = 0;
 
           tabContainer.querySelectorAll(".tab-panel").forEach((panel) => {
             panel.classList.add("hidden");
@@ -242,7 +258,9 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
     }
 
     function setupAccordions() {
-      document.querySelectorAll(".accordion-header").forEach((header) => {
+      document.querySelectorAll<HTMLButtonElement>(".accordion-header").forEach((header) => {
+        if (header.dataset.ready) return;
+        header.dataset.ready = "true";
         header.addEventListener("click", () => {
           const item = header.closest(".accordion-item");
           if (!item) return;
@@ -253,9 +271,11 @@ const primerNombre = names.length > 2 ? names.slice(2).join(' ') : names[0];
             if (content.classList.contains("hidden")) {
               content.classList.remove("hidden");
               icon.textContent = "−";
+              header.setAttribute("aria-expanded", "true");
             } else {
               content.classList.add("hidden");
               icon.textContent = "+";
+              header.setAttribute("aria-expanded", "false");
             }
           }
         });
