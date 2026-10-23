@@ -161,11 +161,16 @@ services:
       start_period: 10s
       retries: 3
   tunnel:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.10.3@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39
     container_name: fime-student-hub-tunnel-1
     restart: always
     network_mode: host
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate --metrics 127.0.0.1:20303 run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   portal:
     build: ./services/portal
     image: student-hub-portal:local
