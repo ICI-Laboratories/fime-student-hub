@@ -82,7 +82,7 @@ if (activeGroupSlug) {
       {enrolledSubjects.map(s => (
         <a
           href={s.syllabusSlug && s.syllabusSlug !== "#" ? `/materias/${s.syllabusSlug}${activeGroupSlug ? `?group=${activeGroupSlug}` : ''}` : "#"}
-          class="subject-entry"
+          class="subject-entry group"
           style="text-decoration: none;"
           aria-label={`Ver detalles de ${s.subject_name}`}
         >
@@ -110,7 +110,11 @@ if (activeGroupSlug) {
             <span style="font-family: var(--font-mono); font-size: 0.625rem; color: var(--color-ink-3); text-transform: uppercase; letter-spacing: 0.04em;">
               {s.exams.length} Evaluaciones programadas
             </span>
-            <span style="color: var(--color-secondary); font-size: 1.25rem; line-height: 1;">→</span>
+            <span class="text-primary group-hover:translate-x-1 transition-transform inline-flex items-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </span>
           </div>
         </a>
       ))}
@@ -189,28 +193,33 @@ if (activeGroupSlug) {
     }
   }
 
-  /* Tarjeta de materia — Swiss Typography Edition
-     Sin bordes de contenedor, solo un border-top para separar jerarquía. */
+  /* Tarjeta de materia — SARA Glass OS */
   .subject-entry {
-    background: transparent;
-    border: none;
-    border-top: 2px solid var(--color-ink);
-    padding: 20px 0 0;
+    background: var(--sara-glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--sara-glass-border);
+    border-top: 3px solid var(--sara-sapphire-500);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--sara-glass-shadow);
     cursor: pointer;
     display: flex;
     flex-direction: column;
     text-align: left;
-    transition: opacity 120ms;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     height: 100%;
   }
 
   .subject-entry:hover {
-    opacity: 0.7;
+    transform: translateY(-2px);
+    box-shadow: var(--sara-shadow-glass-lg);
+    border-color: rgba(21, 154, 179, 0.35);
   }
 
   .subject-entry:focus-visible {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 4px;
+    outline: 2px solid var(--sara-cyan-400);
+    outline-offset: 3px;
   }
 
   .subject-entry__title {

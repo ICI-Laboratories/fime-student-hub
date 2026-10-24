@@ -1,45 +1,54 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+@import "./sara-tokens.css";
 @import "tailwindcss";
 
+/* Override unlayered imported tokens to lock color-scheme to light only */
+:root {
+  color-scheme: light;
+}
+
 /* ════════════════════════════════════════════════════
-   DESIGN TOKENS — PICA-UCOL
-   International Typographic Style / Swiss Design
-   Base unit: 8px. Todo deriva de aquí.
+   DESIGN TOKENS — SARA v0.5.0 PRISMA GLASS OS
+   ICI Laboratories · FIME · Universidad de Colima
    ════════════════════════════════════════════════════ */
 @theme {
-  /* Paleta institucional */
-  --color-primary:     #527630;   /* Verde Pantone 364 — estructura */
-  --color-secondary:   #527630;   /* Mismo que primary para forzar Bicolor estricto */
+  /* Paleta SARA Prisma */
+  --color-primary:     var(--sara-sapphire-700, #1A367A);
+  --color-secondary:   var(--sara-cyan-600, #159AB3);
+  --color-accent-coral:var(--sara-coral-600, #E65642);
+  --color-accent-amber:var(--sara-amber-600, #F27A38);
+  --color-udec-green:  var(--sara-udec-green, #0E6B47);
 
-  /* Escala de grises editorial */
-  --color-ink:         #1A1A1A;   /* Texto primario — casi negro */
-  --color-ink-2:       #4E4D4D;   /* Texto secundario */
-  --color-ink-3:       #666666;   /* Metadata, labels */
-  --color-rule:        #E0E0E0;   /* Líneas divisoras */
-  --color-rule-strong: #B4B4B4;   /* Líneas con más peso */
-  --color-surface:     #FFFFFF;   /* Superficie base */
-  --color-ground:      #F7F7F5;   /* Fondo página */
-  --color-muted:       #F2F2F0;   /* Fondo de elementos recesivos */
+  /* Escala de grises y superficies */
+  --color-ink:         var(--sara-text-primary, #141824);
+  --color-ink-2:       var(--sara-text-secondary, #475569);
+  --color-ink-3:       var(--sara-text-tertiary, #64748B);
+  --color-rule:        var(--sara-border-subtle, rgba(26, 54, 122, 0.08));
+  --color-rule-strong: var(--sara-border-glass, rgba(26, 54, 122, 0.14));
+  --color-surface:     var(--sara-os-canvas, #FFFFFF);
+  --color-ground:      var(--sara-os-bg, #F4F6FB);
+  --color-muted:       var(--sara-sapphire-50, #F2F6FF);
 
   /* Estados semánticos */
-  --color-error:       #770F00;
-  --color-focus:       #527630;
+  --color-error:       var(--sara-magma-700, #8F1E45);
+  --color-focus:       var(--sara-cyan-500, #1CB3CF);
 
   /* Tipografía */
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+  --font-sans:    var(--sara-font-ui, "Inter", system-ui, -apple-system, sans-serif);
+  --font-display: var(--sara-font-display, "Manrope", system-ui, -apple-system, sans-serif);
+  --font-mono:    var(--sara-font-mono, "JetBrains Mono", ui-monospace, monospace);
 
-  /* Escala tipográfica modular — contraste dramático (Swiss) */
-  --text-2xs:  0.625rem;    /* 10px — overlines, metadata */
-  --text-xs:   0.75rem;     /* 12px — captions, mono labels */
-  --text-sm:   0.875rem;    /* 14px — cuerpo secundario */
-  --text-base: 1rem;        /* 16px — cuerpo */
-  --text-lg:   1.25rem;     /* 20px — subtítulos */
-  --text-xl:   1.75rem;     /* 28px — títulos de sección */
-  --text-2xl:  2.5rem;      /* 40px — títulos de página */
-  --text-3xl:  3rem;        /* 48px — headings principales */
+  /* Escala tipográfica */
+  --text-2xs:  0.625rem;    /* 10px */
+  --text-xs:   0.75rem;     /* 12px */
+  --text-sm:   0.875rem;    /* 14px */
+  --text-base: 1rem;        /* 16px */
+  --text-lg:   1.25rem;     /* 20px */
+  --text-xl:   1.75rem;     /* 28px */
+  --text-2xl:  2.25rem;     /* 36px */
+  --text-3xl:  3rem;        /* 48px */
 
-  /* Espaciado (base 8px) */
+  /* Espaciado */
   --space-1:  8px;
   --space-2:  16px;
   --space-3:  24px;
@@ -49,13 +58,13 @@
   --space-8:  64px;
   --space-10: 80px;
 
-  /* Motion — mínimo, funcional */
-  --duration: 120ms;
+  /* Motion */
+  --duration: 150ms;
   --ease:     cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ════════════════════════════════════════════════════
-   BASE RESET
+   BASE RESET & GLASS CAUSTICS
    ════════════════════════════════════════════════════ */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
@@ -66,7 +75,12 @@
   }
 
   body {
-    background-color: var(--color-ground);
+    background-color: var(--sara-os-bg, #F4F6FB);
+    background-image:
+      radial-gradient(ellipse 65% 50% at 10% 10%, var(--sara-caustic-cyan, rgba(21, 154, 179, 0.12)), transparent 70%),
+      radial-gradient(ellipse 60% 50% at 90% 90%, var(--sara-caustic-coral, rgba(230, 86, 66, 0.09)), transparent 70%),
+      radial-gradient(ellipse 45% 35% at 50% 45%, var(--sara-caustic-indigo, rgba(86, 44, 125, 0.07)), transparent 65%);
+    background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 1rem;
@@ -78,11 +92,11 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-sans);
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: var(--sara-sapphire-950, #0A1329);
     margin: 0;
   }
 
@@ -96,32 +110,26 @@
 }
 
 /* ════════════════════════════════════════════════════
-   SWISS TYPOGRAPHIC UTILITIES
-
-   Principio: la tipografía ES el diseño.
-   No hay "tarjetas" ni "contenedores" decorativos.
-   La jerarquía emerge del contraste tipográfico y
-   el espaciado, no de bordes ni colores.
+   SARA GLASS OS UTILITIES
    ════════════════════════════════════════════════════ */
 
-/* OVERLINE — etiqueta de categoría editorial
-   Uso: antes de un h1/h2 para contextualizar la sección
-   Ref: Standard en el International Typographic Style */
+/* OVERLINE */
 .overline {
   display: block;
+  font-family: var(--font-sans);
   font-size: 0.625rem;       /* 10px */
-  font-weight: 600;
-  letter-spacing: 0.18em;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-ink-3);
-  line-height: 1;
+  line-height: 1.2;
 }
 
-.overline--primary { color: var(--color-primary); }
-.overline--secondary { color: var(--color-secondary); }
+.overline--primary { color: var(--sara-sapphire-600, #224FA8); }
+.overline--secondary { color: var(--sara-cyan-700, #156A7A); }
+.overline--coral { color: var(--sara-coral-600, #E65642); }
 
-/* RULE — línea divisora horizontal
-   Uso: separar secciones. NO usar border en tarjetas. */
+/* RULE */
 .rule {
   border: none;
   border-top: 1px solid var(--color-rule);
@@ -129,22 +137,20 @@
 }
 
 .rule--strong {
-  border-top-color: var(--color-ink);
-  border-top-width: 2px;
+  border-top-color: var(--color-rule-strong);
+  border-top-width: 1px;
 }
 
-/* SECTION — unidad de contenido. Sin borde, sin fondo.
-   La separación viene del espaciado vertical. */
+/* SECTION */
 .section {
   padding-top: 32px;
 }
 
-/* LABEL — campo con soporte de dato
-   Uso: "Carrera / ING. DE SOFTWARE" */
+/* LABEL / VALUE */
 .field-label {
   font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-ink-3);
   display: block;
@@ -156,107 +162,142 @@
   font-weight: 600;
   color: var(--color-ink);
   display: block;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
-/* TAG — etiqueta de estado compacta, monocromática */
+/* TAG — Badge Duotone */
 .tag {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: 0.5625rem;      /* 9px */
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 2px 6px;
-  border: 1px solid currentColor;
-  color: var(--color-ink-3);
+  padding: 3px 8px;
+  border-radius: var(--sara-radius-pill, 9999px);
+  border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
+  background: var(--sara-sapphire-50, #F2F6FF);
+  color: var(--sara-sapphire-700, #1A367A);
   line-height: 1.4;
 }
 
 .tag--primary {
-  color: var(--color-primary);
+  background: var(--sara-sapphire-100, #E0EBFF);
+  border-color: var(--sara-cyan-500, #1CB3CF);
+  color: var(--sara-sapphire-700, #1A367A);
 }
 
-/* LINK tipográfico — con subrayado como único indicador */
+.tag--coral {
+  background: var(--sara-coral-50, #FFF4F1);
+  border-color: var(--sara-coral-400, #FF7659);
+  color: var(--sara-coral-700, #B83A29);
+}
+
+/* LINK */
 .link {
-  color: var(--color-secondary);
-  text-decoration: none;
-  transition: text-decoration-color var(--duration);
+  color: var(--sara-sapphire-600, #224FA8);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--duration) var(--ease);
 }
-.link:hover, .link:focus-visible { text-decoration: underline; }
+.link:hover, .link:focus-visible {
+  color: var(--sara-cyan-700, #156A7A);
+}
 
-/* BOTÓN PRIMARIO — el único elemento con color fuerte */
+/* BOTONES CON GLASS OS */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 44px;
-  padding: 0 24px;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 22px;
   font-family: var(--font-sans);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border-radius: 0;
+  border-radius: var(--sara-radius-md, 12px);
   cursor: pointer;
   border: none;
   text-decoration: none;
-  transition: background-color var(--duration) var(--ease);
+  transition: all var(--duration) var(--ease);
 }
 
 .btn--primary {
-  background-color: var(--color-secondary);
+  background: linear-gradient(135deg, var(--sara-sapphire-700, #1A367A), var(--sara-sapphire-600, #224FA8));
   color: #FFFFFF;
+  box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular, rgba(255, 255, 255, 0.4)), var(--sara-shadow-glass-sm);
+  border: 1px solid var(--sara-border-glass, rgba(255, 255, 255, 0.2));
 }
-.btn--primary:hover { background-color: #3e5c23; }
+.btn--primary:hover {
+  background: linear-gradient(135deg, var(--sara-sapphire-600, #224FA8), var(--sara-sapphire-500, #2B62D0));
+  box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-md);
+  transform: translateY(-1px);
+}
+.btn--primary:active {
+  transform: translateY(0);
+}
 
 .btn--ghost {
-  background-color: transparent;
-  color: var(--color-ink-2);
-  border: 1px solid var(--color-rule-strong);
+  background: var(--sara-glass-strong, rgba(255, 255, 255, 0.88));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--sara-sapphire-700, #1A367A);
+  border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
+  box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-sm);
 }
-.btn--ghost:hover { background-color: var(--color-muted); }
+.btn--ghost:hover {
+  background: var(--color-surface, #FFFFFF);
+  border-color: var(--sara-cyan-500, #1CB3CF);
+  color: var(--sara-cyan-700, #156A7A);
+  transform: translateY(-1px);
+}
 
 /* INPUT / SELECT */
 .input {
   width: 100%;
-  height: 44px;
-  padding: 0 12px;
+  min-height: 44px;
+  padding: 0 14px;
   background-color: var(--color-surface);
-  border: 1px solid var(--color-rule-strong);
-  border-radius: 0;
+  border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.14));
+  border-radius: var(--sara-radius-md, 12px);
   font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-ink);
-  transition: border-color var(--duration);
+  transition: border-color var(--duration), box-shadow var(--duration);
   appearance: none;
 }
 
-.input:hover { border-color: var(--color-ink-3); }
-.input:focus { border-color: var(--color-secondary); }
+.input:hover { border-color: var(--sara-cyan-600, #159AB3); }
+.input:focus {
+  border-color: var(--sara-cyan-500, #1CB3CF);
+  box-shadow: 0 0 0 3px rgba(28, 179, 207, 0.2);
+  outline: none;
+}
 
 select.input {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%234E4D4D' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%23224FA8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 32px;
+  background-position: right 12px center;
+  padding-right: 36px;
   cursor: pointer;
 }
 
-/* NAV ITEM — texto puro, sin icono */
+/* NAV ITEM */
 .nav-link {
-  font-size: 0.6875rem;       /* 11px */
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--color-ink-3);
+  color: var(--color-ink-2);
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 8px 0;
+  padding: 4px 0;
   border-bottom: 2px solid transparent;
   transition: color var(--duration), border-color var(--duration);
   white-space: nowrap;
@@ -268,21 +309,21 @@ select.input {
   cursor: pointer;
 }
 .nav-link:hover {
-  color: var(--color-ink);
-  border-bottom-color: var(--color-ink-2);
+  color: var(--sara-sapphire-700, #1A367A);
+  border-bottom-color: var(--sara-cyan-500, #1CB3CF);
 }
 .nav-link.active {
-  color: var(--color-ink);
-  border-bottom-color: var(--color-primary);
+  color: var(--sara-sapphire-700, #1A367A);
+  border-bottom-color: var(--sara-sapphire-600, #224FA8);
   font-weight: 700;
 }
-.nav-link--muted { color: var(--color-rule-strong); cursor: default; pointer-events: none; }
+.nav-link--muted { color: var(--color-ink-3); cursor: default; pointer-events: none; }
 
 /* SCROLLBAR */
-.scroll::-webkit-scrollbar { width: 3px; height: 3px; }
+.scroll::-webkit-scrollbar { width: 5px; height: 5px; }
 .scroll::-webkit-scrollbar-track { background: transparent; }
-.scroll::-webkit-scrollbar-thumb { background: var(--color-rule-strong); }
-.scroll::-webkit-scrollbar-thumb:hover { background: var(--color-ink-3); }
+.scroll::-webkit-scrollbar-thumb { background: var(--sara-border-glass); border-radius: var(--sara-radius-pill); }
+.scroll::-webkit-scrollbar-thumb:hover { background: var(--sara-cyan-600); }
 
 /* MOTION REDUCIDO */
 @media (prefers-reduced-motion: reduce) {
@@ -293,10 +334,11 @@ select.input {
   }
 }
 
-/* El foco debe seguir visible incluso en componentes con estilos propios. */
+/* FOCO ACCESIBLE */
 :focus-visible {
-  outline: 3px solid var(--color-focus) !important;
+  outline: 2px solid var(--sara-cyan-500, #1CB3CF) !important;
   outline-offset: 3px;
+  border-radius: var(--sara-radius-sm, 6px);
 }
 
 :where(a, button, input, select, textarea, [tabindex]) {
@@ -308,16 +350,23 @@ select.input {
   top: 8px;
   left: 8px;
   z-index: 2000;
-  padding: 12px 16px;
+  padding: 12px 18px;
   background: var(--color-surface);
   color: var(--color-ink);
-  border: 2px solid var(--color-primary);
+  border: 2px solid var(--sara-cyan-500);
+  border-radius: var(--sara-radius-md, 12px);
+  box-shadow: var(--sara-shadow-glass-lg);
   font-weight: 700;
   transform: translateY(calc(-100% - 16px));
+  transition: transform var(--duration) var(--ease);
 }
 
 .skip-link:focus { transform: translateY(0); }
 #main-content { scroll-margin-top: 80px; }
+
+@media (max-width: 767px) {
+  input.input, select.input, textarea.input { font-size: 16px; }
+}
 
 @media (forced-colors: active) {
   :focus-visible { outline-color: Highlight !important; }

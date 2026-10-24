@@ -10,19 +10,20 @@ const requestedCategory = Astro.url.searchParams.get('categoria') ?? '';
 const category = categories.includes(requestedCategory) ? requestedCategory : '';
 const count = apps.filter(app => matchesApp(app, query, category)).length;
 ---
-<InstitutionalLayout title="Aplicaciones" description="Herramientas académicas y aplicaciones disponibles para estudiantes de FIME.">
+<InstitutionalLayout title="Aplicaciones" description="Herramientas académicas y aplicaciones disponibles para estudiantes de FIME en el ecosistema SARA.">
   <section class="apps-catalog" aria-labelledby="catalog-title">
-    <p class="overline overline--primary">HERRAMIENTAS PARA ESTUDIANTES</p>
-    <h1 id="catalog-title">Aplicaciones y recursos</h1>
-    <p class="catalog-intro">Encuentra tu horario, ubica un aula o elige una herramienta para estudiar. Cada recurso indica el tipo de acceso que ofrece.</p>
+    <p class="overline overline--secondary">ECOSISTEMA DIGITAL ACADÉMICO SARA</p>
+    <h1 id="catalog-title">Aplicaciones y recursos FIME</h1>
+    <p class="catalog-intro">Encuentra tu horario, ubica un aula o elige una herramienta de estudio. Cada recurso indica el nivel de acceso disponible de forma transparente.</p>
+
     <form action="/aplicaciones" method="get" role="search" aria-label="Buscar herramientas" class="catalog-filters">
       <div class="search-field">
         <label for="app-search">Buscar una herramienta</label>
-        <input id="app-search" name="q" type="search" value={query} maxlength="120" placeholder="Nombre, tema o actividad" aria-controls="catalog-list" />
+        <input id="app-search" name="q" type="search" value={query} maxlength="120" placeholder="Nombre, tema o actividad..." aria-controls="catalog-list" class="input" />
       </div>
       <div>
         <label for="app-category">Categoría</label>
-        <select id="app-category" name="categoria" aria-controls="catalog-list">
+        <select id="app-category" name="categoria" aria-controls="catalog-list" class="input">
           <option value="">Todas las categorías</option>
           {categories.map(item => <option value={item} selected={category === item}>{item}</option>)}
         </select>
@@ -30,24 +31,49 @@ const count = apps.filter(app => matchesApp(app, query, category)).length;
       <button type="submit" class="btn btn--primary">Buscar</button>
       <a class="clear-search" href="/aplicaciones" id="clear-catalog">Limpiar filtros</a>
     </form>
+
     <p id="catalog-count" class="catalog-count" role="status" aria-live="polite" aria-atomic="true">{resultLabel(count)}</p>
+
     <ul class="app-grid" id="catalog-list" role="list">
       {apps.map(app => <li hidden={!matchesApp(app, query, category)} data-search={searchText(app)} data-category={app.category}>
         <article aria-labelledby={`app-${app.id}`}>
-          <div class="card-meta"><span class="tag">{app.category}</span><span class="access-label">{app.access}</span></div>
+          <div class="card-meta">
+            <span class="tag tag--primary">{app.category}</span>
+            <span class="access-label">{app.access}</span>
+          </div>
           <h2 id={`app-${app.id}`}>{app.name}</h2>
           <p>{app.description}</p>
-          <a class="app-link" href={app.url}>Abrir {app.name} <span aria-hidden="true">→</span></a>
+          <a class="app-link" href={app.url}>
+            <span>Abrir {app.name}</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
         </article>
       </li>)}
     </ul>
+
     <div id="no-results" class="empty-results" hidden={count > 0}>
-      <h2>No encontramos coincidencias</h2><p>Prueba con otra palabra o elige «Todas las categorías».</p>
+      <h2>No encontramos coincidencias</h2>
+      <p>Prueba con otra palabra o elige «Todas las categorías».</p>
     </div>
+
     <aside class="account-note" aria-label="Información de acceso">
-      <h2>El acceso académico sigue siendo libre</h2>
-      <p>Horarios, mapa, profesores, materias y evaluaciones se consultan sin iniciar sesión. Las aplicaciones SARA indican cuándo necesitas tu cuenta central.</p>
-      <a href="/session/login?return_to=%2Faplicaciones" data-sara-access-link data-login-label="Usar mi cuenta SARA →" data-account-label="Gestionar mi cuenta SARA →">Usar mi cuenta SARA <span aria-hidden="true">→</span></a>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <img src="/vectors/logos/prisma/sara_isotipo_prisma_claro.svg" alt="" width="20" height="14" aria-hidden="true" />
+        <h2 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; color: var(--sara-sapphire-950); margin: 0;">El acceso académico sigue siendo libre</h2>
+      </div>
+      <p>Horarios, mapa, profesores, materias y evaluaciones se consultan sin necesidad de iniciar sesión. Las aplicaciones SARA integradas indican cuándo requieres tu cuenta central opcional.</p>
+      <div style="margin-top: 14px;">
+        <a href="/session/login?return_to=%2Faplicaciones" data-sara-access-link data-login-label="Usar mi cuenta SARA" data-account-label="Gestionar mi cuenta SARA" class="link" style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+          Usar mi cuenta SARA
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
     </aside>
   </section>
 </InstitutionalLayout>
@@ -87,26 +113,84 @@ const count = apps.filter(app => matchesApp(app, query, category)).length;
 </script>
 <style>
   .apps-catalog { max-width: 1080px; margin: auto; }
-  h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); margin: 12px 0; letter-spacing: -.03em; }
-  p { line-height: 1.7; color: var(--color-ink-2); }
-  .catalog-intro { max-width: 720px; }
+  h1 { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 2.75rem); margin: 8px 0 12px; letter-spacing: -.035em; color: var(--sara-sapphire-950, #0A1329); font-weight: 800; }
+  p { line-height: 1.6; color: var(--color-ink-2); }
+  .catalog-intro { max-width: 720px; font-size: 1rem; }
   .catalog-filters { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; margin: 28px 0 16px; }
   .search-field { flex: 1 1 260px; }
-  label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: 8px; }
-  input, select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--color-rule-strong); border-radius: 4px; font: inherit; background: var(--color-surface); color: var(--color-ink); }
-  a { color: var(--color-primary); font-weight: 600; text-underline-offset: 3px; }
-  .clear-search { display: inline-flex; align-items: center; min-height: 44px; }
-  .catalog-count { font-size: .875rem; }
-  .app-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; padding: 0; margin: 20px 0; list-style: none; }
-  article { height: 100%; border: 1px solid var(--color-rule); padding: 24px; background: var(--color-surface); border-radius: 4px; display: flex; flex-direction: column; }
+  label { display: block; font-size: .8125rem; font-weight: 600; margin-bottom: 6px; color: var(--color-ink-2); }
+  a { color: var(--sara-sapphire-600, #224FA8); font-weight: 600; text-underline-offset: 3px; }
+  .clear-search { display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px; color: var(--color-ink-2); }
+  .clear-search:hover { color: var(--sara-cyan-600); }
+  .catalog-count { font-size: .875rem; color: var(--color-ink-3); margin-top: 8px; }
+  .app-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; padding: 0; margin: 24px 0; list-style: none; }
+  article {
+    height: 100%;
+    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.1));
+    border-left: 3px solid var(--sara-sapphire-600, #224FA8);
+    padding: 24px;
+    background: var(--sara-glass-strong, rgba(255, 255, 255, 0.88));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--sara-radius-md, 12px);
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  }
+  article:hover {
+    transform: translateY(-2px);
+    border-color: var(--sara-cyan-500, #1CB3CF);
+    border-left-color: var(--sara-cyan-600, #159AB3);
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-md);
+  }
   .card-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .access-label { font-size: .8125rem; color: var(--color-ink-2); }
-  h2 { font-size: 1.25rem; margin: 18px 0 0; line-height: 1.4; }
-  article p { flex: 1; font-size: .9375rem; }
-  .app-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; border-top: 1px solid var(--color-rule); padding-top: 12px; }
-  .account-note { border-top: 1px solid var(--color-rule); padding-top: 12px; margin-top: 32px; font-size: .9375rem; }
-  .account-note h2 { font-size: 1.0625rem; }
-  .empty-results { border: 1px dashed var(--color-rule-strong); padding: 24px; }
+  .access-label { font-size: .8125rem; font-weight: 600; color: var(--sara-text-secondary); }
+  h2 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--sara-sapphire-950); margin: 6px 0 0; line-height: 1.3; }
+  article p { flex: 1; font-size: .875rem; margin: 4px 0 12px; }
+  .app-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    border-top: 1px solid var(--sara-border-subtle);
+    padding-top: 12px;
+    font-weight: 700;
+    color: var(--sara-sapphire-600);
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+  .app-link:hover { color: var(--sara-cyan-600); }
+  .account-note {
+    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
+    border-radius: var(--sara-radius-md, 12px);
+    background: var(--sara-glass-base, rgba(255, 255, 255, 0.72));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-sm);
+    padding: 24px;
+    margin-top: 36px;
+    font-size: .9375rem;
+  }
+  .empty-results {
+    border: 1px dashed var(--sara-border-glass);
+    border-radius: var(--sara-radius-md, 12px);
+    padding: 32px;
+    text-align: center;
+    background: var(--sara-glass-subtle);
+  }
+  .empty-results h2 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--sara-sapphire-950);
+    margin-bottom: 8px;
+  }
   [hidden] { display: none !important; }
-  @media(max-width: 640px) { .app-grid { grid-template-columns: 1fr; } .catalog-filters > div { width: 100%; } article { padding: 20px; } }
+  @media(max-width: 640px) {
+    .app-grid { grid-template-columns: 1fr; }
+    .catalog-filters > div { width: 100%; }
+    article { padding: 18px; }
+  }
 </style>

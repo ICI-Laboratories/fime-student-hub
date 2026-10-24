@@ -2,62 +2,31 @@
 import InstitutionalLayout from "../layouts/InstitutionalLayout.astro";
 ---
 
-<div title="Página no encontrada">
-  <div class="not-found-container">
-    <div class="not-found-content">
-      <h1>404</h1>
-      <h2>Página no encontrada</h2>
-      <p>Lo sentimos, la página que buscas no existe o ha sido movida.</p>
-      <a href="/" class="btn-home">Volver al inicio</a>
+<InstitutionalLayout title="404 — Página no encontrada">
+  <div class="min-h-[60vh] flex items-center justify-center py-12 px-4 text-center">
+    <div class="glass-card max-w-lg w-full p-8 sm:p-12 text-center relative overflow-hidden">
+      <!-- Caustic Ambient Glow -->
+      <div class="absolute -top-16 -right-16 w-36 h-36 rounded-full bg-sara-cyan/20 blur-3xl pointer-events-none" aria-hidden="true"></div>
+      <div class="absolute -bottom-16 -left-16 w-36 h-36 rounded-full bg-sara-coral/20 blur-3xl pointer-events-none" aria-hidden="true"></div>
+
+      <div class="relative z-10">
+        <span class="font-mono text-xs font-bold uppercase tracking-wider text-sara-sapphire-500 block mb-2">Error 404</span>
+        <h1 class="text-6xl sm:text-7xl font-black tracking-tight text-ink mb-4 font-mono">
+          404
+        </h1>
+        <h2 class="text-xl sm:text-2xl font-bold text-ink mb-3">
+          Página no encontrada
+        </h2>
+        <p class="text-sm text-ink-2 mb-8 leading-relaxed">
+          El recurso al que intentas acceder no existe, ha cambiado de ubicación o el identificador es incorrecto.
+        </p>
+        <a href="/" class="btn btn--primary inline-flex items-center gap-2 justify-center no-underline min-h-[44px] px-6 py-3 rounded-xl font-bold text-sm shadow-md">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>Volver al inicio</span>
+        </a>
+      </div>
     </div>
   </div>
-</div>
-
-<style>
-  .not-found-container {
-    min-height: calc(100vh - 150px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-image: url("/images/404.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    text-align: center;
-    color: white;
-    padding: 2rem;
-  }
-
-  h1 {
-    font-size: 6rem;
-    margin: 0;
-    color: #4caf50;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  }
-
-  h2 {
-    font-size: 2rem;
-    margin-top: 0;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
-  }
-
-  .btn-home {
-    display: inline-block;
-    background-color: #4caf50;
-    color: white;
-    padding: 0.8rem 1.5rem;
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-  }
-
-  .btn-home:hover {
-    background-color: #45a049;
-  }
-</style>
+</InstitutionalLayout>

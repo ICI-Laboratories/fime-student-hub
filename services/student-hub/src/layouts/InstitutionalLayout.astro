@@ -18,7 +18,6 @@ const isFromLanding = fromLandingProp ?? (Astro.url.searchParams.get("from") ===
 const pathname = Astro.url.pathname.replace(/\/$/, "") || "/";
 
 function isActive(path: string): boolean {
-  // El proxy sirve /studenthub mediante la página raíz de este servicio.
   if (path === "/studenthub") return pathname === "/" || pathname === "/studenthub";
   if (path === "/") return false;
   return pathname === path || pathname.startsWith(`${path}/`);
@@ -58,12 +57,15 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
     <meta property="og:title" content={`${title} | ${isFromLanding ? "FIMEBot" : "StudentHUB"}`} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="/vectors/logos/prisma/sara_app_icon_prisma_claro.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" />
   </head>
 
   <body>
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
+    <!-- Banda refractiva del prisma SARA & UCOL -->
     <div class="institutional-stripe" aria-hidden="true"></div>
 
     <header class="site-header" id="site-header">
@@ -73,10 +75,16 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
           class="wordmark"
           aria-label={isFromLanding ? "FIMEBot — Inicio" : "StudentHUB — Inicio"}
         >
-          <span class="wordmark__overline">Universidad de Colima</span>
-          <span class="wordmark__title">
-            {isFromLanding ? <>FIME<em>Bot</em></> : <>Student<em>HUB</em></>}
-          </span>
+          <div class="wordmark__brand-group">
+            <img src="/vectors/logos/prisma/sara_isotipo_prisma_claro.svg" alt="" class="wordmark__logo" width="32" height="22" aria-hidden="true" />
+            <div class="wordmark__text">
+              <span class="wordmark__overline">Universidad de Colima · FIME</span>
+              <span class="wordmark__title">
+                {isFromLanding ? <>FIME<em>Bot</em></> : <>Student<em>HUB</em></>}
+              </span>
+            </div>
+          </div>
+          <span class="wordmark__badge">Ecosistema SARA</span>
         </a>
 
         <nav class="desktop-navigation" aria-label="Navegación principal">
@@ -96,15 +104,23 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
         </nav>
 
         {isFromLanding ? (
-          <a href="/#fimebot-chat" class="btn-header-chat"><span aria-hidden="true">[o_o]</span> FimeBot</a>
+          <a href="/#fimebot-chat" class="btn-header-chat">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+              <path d="M4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20H5.5C4.67 20 4 19.33 4 18.5V12Z" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+              <path d="M12 8L13.1 10.9L16 12L13.1 13.1L12 16L10.9 13.1L8 12L10.9 10.9L12 8Z" fill="#FF7659" stroke="#FF7659" stroke-width="1.1" stroke-linejoin="round"/>
+            </svg>
+            FimeBot
+          </a>
         ) : (
           <a href="/studenthub?select_group=true" class="btn-change-group-header">
-            <span aria-hidden="true">[⇄]</span> Cambiar Grupo
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+            </svg>
+            Cambiar Grupo
           </a>
         )}
       </div>
       <SessionAccess />
-      <hr class="rule" />
     </header>
 
     <main id="main-content" tabindex="-1">
@@ -113,11 +129,15 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
 
     <footer class="site-footer">
       <div class="footer-inner">
-        <span>StudentHUB · Universidad de Colima</span>
-        <span>Sistema de información académica</span>
+        <div class="footer-brand">
+          <img src="/vectors/logos/prisma/sara_isotipo_prisma_claro.svg" alt="" width="22" height="15" aria-hidden="true" />
+          <span>FIME · Universidad de Colima</span>
+        </div>
+        <span>Ecosistema Digital Académico SARA v0.5.0 · StudentHUB</span>
       </div>
     </footer>
 
+    <!-- Navegación móvil con Glass OS Dock -->
     <nav class="mobile-nav" aria-label="Navegación móvil">
       {academicLinks.slice(0, 4).map((item) => (
         <a
@@ -143,10 +163,19 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
       </button>
     </nav>
 
+    <!-- Drawer Móvil Glass OS -->
     <dialog id="mobile-drawer" aria-labelledby="drawer-title">
       <div class="drawer-heading">
-        <h2 id="drawer-title">Menú académico</h2>
-        <button type="button" id="btn-close-drawer" aria-label="Cerrar menú">×</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="/vectors/logos/prisma/sara_isotipo_prisma_claro.svg" alt="" width="20" height="14" aria-hidden="true" />
+          <h2 id="drawer-title">Menú académico FIME</h2>
+        </div>
+        <button type="button" id="btn-close-drawer" aria-label="Cerrar menú">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
       <nav class="drawer-navigation" aria-label="Todas las secciones">
         {[homeLink, ...academicLinks].map((item) => (
@@ -154,7 +183,9 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
             {item.label}
           </a>
         ))}
-        <a href="/studenthub?select_group=true">Cambiar grupo</a>
+        <a href="/studenthub?select_group=true" style="color: var(--sara-sapphire-600); font-weight: 700;">
+          Cambiar grupo
+        </a>
       </nav>
     </dialog>
     <noscript>
@@ -196,7 +227,6 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
         }, options);
 
         btnClose.addEventListener("click", closeDrawer, options);
-        // <dialog> mantiene el foco dentro y permite cerrar con Escape de forma nativa.
         drawer.addEventListener("close", () => {
           btnMore.setAttribute("aria-expanded", "false");
           document.body.style.overflow = previousOverflow;
@@ -227,8 +257,20 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
 </html>
 
 <style>
-  .institutional-stripe { height: 4px; background: var(--color-primary); }
-  .site-header { position: sticky; top: 0; z-index: 30; background: var(--color-surface); }
+  .institutional-stripe {
+    height: 4px;
+    background: linear-gradient(90deg, #1A367A 0%, #159AB3 35%, #0E6B47 65%, #E65642 100%);
+  }
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--sara-glass-dock, rgba(255, 255, 255, 0.82));
+    backdrop-filter: blur(25px) saturate(160%);
+    -webkit-backdrop-filter: blur(25px) saturate(160%);
+    border-bottom: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.1));
+    box-shadow: inset 0 -1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-sm);
+  }
   .header-inner {
     max-width: 1280px;
     margin: 0 auto;
@@ -237,76 +279,313 @@ const moreIsActive = academicLinks.slice(4).some(({ path }) => isActive(path));
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
+    gap: 20px;
   }
-  .wordmark { display: flex; flex-direction: column; gap: 2px; text-decoration: none; flex-shrink: 0; }
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+  .wordmark__brand-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .wordmark__logo {
+    display: block;
+    width: 32px;
+    height: 22px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+  .wordmark__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
   .wordmark__overline {
-    font-size: 0.625rem; font-weight: 500; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--color-ink-3); line-height: 1.2;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--sara-text-secondary, #475569);
+    line-height: 1.1;
   }
   .wordmark__title {
-    font-family: var(--font-sans); font-size: 1.25rem; font-weight: 900;
-    letter-spacing: -0.04em; color: var(--color-ink); line-height: 1;
+    font-family: var(--sara-font-display, "Manrope", sans-serif);
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--sara-text-primary, #141824);
+    line-height: 1;
   }
-  .wordmark__title em { font-style: normal; color: var(--color-primary); }
-  .desktop-navigation { flex: 1; }
-  .nav-list { display: flex; align-items: center; gap: 16px; list-style: none; margin: 0; padding: 0; }
-  .btn-header-chat, .btn-change-group-header {
-    min-height: 44px; padding: 8px 12px; border: 1px solid var(--color-primary); border-radius: 4px;
-    color: var(--color-primary); text-decoration: none; font-size: 0.75rem; font-weight: 700;
-    font-family: var(--font-mono); display: inline-flex; align-items: center; gap: 6px;
+  .wordmark__title em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--sara-cyan-600, #159AB3), var(--sara-sapphire-600, #224FA8));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .wordmark__badge {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--sara-font-mono, monospace);
+    font-size: 0.5625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: var(--sara-radius-pill, 9999px);
+    background: var(--sara-sapphire-100, rgba(224, 235, 255, 0.7));
+    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.1));
+    color: var(--sara-sapphire-700, #1A367A);
     white-space: nowrap;
   }
-  .btn-header-chat { background: var(--color-primary); color: white; }
-  .btn-change-group-header:hover { background: var(--color-muted); }
-  #main-content { max-width: 1280px; margin: 0 auto; padding: 40px 24px 80px; min-height: calc(100vh - 120px); }
-  .site-footer { border-top: 1px solid var(--color-rule); background: var(--color-surface); padding: 20px 24px; }
+  .desktop-navigation {
+    flex: 1;
+    margin-left: 12px;
+  }
+  .nav-list {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .btn-header-chat, .btn-change-group-header {
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: var(--sara-radius-md, 12px);
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: var(--font-sans);
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    transition: all 150ms ease;
+  }
+  .btn-header-chat {
+    background: linear-gradient(135deg, var(--sara-sapphire-700, #1A367A), var(--sara-sapphire-600, #224FA8));
+    color: #FFFFFF;
+    border: 1px solid var(--sara-border-glass, rgba(255, 255, 255, 0.2));
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-sm);
+  }
+  .btn-header-chat:hover {
+    background: linear-gradient(135deg, var(--sara-sapphire-600, #224FA8), var(--sara-cyan-600, #159AB3));
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-md);
+  }
+  .btn-change-group-header {
+    background: var(--sara-glass-strong, rgba(255, 255, 255, 0.88));
+    backdrop-filter: blur(16px);
+    color: var(--sara-sapphire-700, #1A367A);
+    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-sm);
+  }
+  .btn-change-group-header:hover {
+    background: var(--color-surface, #FFFFFF);
+    color: var(--sara-cyan-600, #159AB3);
+    border-color: var(--sara-cyan-500, #1CB3CF);
+    transform: translateY(-1px);
+  }
+  #main-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    min-height: calc(100vh - 120px);
+  }
+  .site-footer {
+    border-top: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.1));
+    background: var(--sara-glass-dock, rgba(255, 255, 255, 0.82));
+    backdrop-filter: blur(20px);
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular);
+    padding: 20px 24px;
+  }
   .footer-inner {
-    max-width: 1280px; margin: 0 auto; display: flex; flex-wrap: wrap;
-    justify-content: space-between; align-items: center; gap: 8px 24px;
-    font-size: 0.6875rem; color: var(--color-ink-3);
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 24px;
+    font-size: 0.6875rem;
+    color: var(--sara-text-secondary, #475569);
   }
-  .footer-inner span:first-child { letter-spacing: 0.08em; text-transform: uppercase; }
-  .mobile-nav { display: none; }
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sara-text-primary, #141824);
+  }
+  .mobile-nav {
+    display: none;
+  }
   .mobile-nav__item {
-    flex: 1 1 0; min-width: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 6px; min-height: 52px;
-    text-decoration: none; color: var(--color-ink-3); background: none; border: none;
-    cursor: pointer; padding: 8px 2px; transition: color var(--duration);
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 52px;
+    text-decoration: none;
+    color: var(--sara-text-secondary, #475569);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 2px;
+    transition: color var(--duration);
   }
-  .mobile-nav__item--active { color: var(--color-primary); }
-  .mobile-nav__item:hover { color: var(--color-ink); }
-  .mobile-nav__dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: 0.3; }
-  .mobile-nav__item--active .mobile-nav__dot { opacity: 1; }
-  .mobile-nav__label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.01em; text-transform: uppercase; line-height: 1.3; }
+  .mobile-nav__item--active {
+    color: var(--sara-sapphire-600, #224FA8);
+  }
+  .mobile-nav__item:hover {
+    color: var(--sara-cyan-600, #159AB3);
+  }
+  .mobile-nav__dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.3;
+  }
+  .mobile-nav__item--active .mobile-nav__dot {
+    opacity: 1;
+    background: var(--sara-cyan-500, #1CB3CF);
+    box-shadow: 0 0 8px var(--sara-cyan-400);
+  }
+  .mobile-nav__label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1.3;
+  }
   #mobile-drawer {
-    position: fixed; inset: auto 0 0; width: 100%; max-width: none;
-    max-height: 85dvh; margin: 0; padding: 16px 24px max(24px, env(safe-area-inset-bottom));
-    overflow-y: auto; overscroll-behavior: contain;
-    border: 0; border-top: 1px solid var(--color-rule);
-    background: var(--color-surface); color: var(--color-ink);
+    position: fixed;
+    inset: auto 0 0;
+    width: 100%;
+    max-width: none;
+    max-height: 85dvh;
+    margin: 0;
+    padding: 20px 24px max(24px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 0;
+    border-top: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
+    border-radius: 20px 20px 0 0;
+    background: var(--sara-glass-strong, rgba(255, 255, 255, 0.95));
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-lg);
+    color: var(--color-ink);
   }
-  #mobile-drawer::backdrop { background: rgba(26, 26, 26, 0.5); }
-  .drawer-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 8px; }
-  .drawer-heading h2 { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink-3); }
+  #mobile-drawer::backdrop {
+    background: rgba(10, 19, 41, 0.5);
+    backdrop-filter: blur(4px);
+  }
+  .drawer-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--sara-border-subtle);
+  }
+  .drawer-heading h2 {
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--sara-sapphire-950, #0A1329);
+  }
   #btn-close-drawer {
-    display: grid; place-items: center; min-height: 44px; min-width: 44px;
-    background: none; border: none; color: var(--color-ink-2); font-size: 1.5rem; cursor: pointer;
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    min-width: 44px;
+    background: var(--sara-sapphire-50);
+    border: 1px solid var(--sara-border-glass);
+    border-radius: var(--sara-radius-pill);
+    color: var(--sara-text-secondary);
+    cursor: pointer;
+    transition: all 150ms ease;
   }
-  .drawer-navigation { display: flex; flex-direction: column; }
-  .drawer-navigation a { display: block; padding: 12px 0; min-height: 48px; font-size: 1rem; font-weight: 600; border-bottom: 1px solid var(--color-rule); }
-  .drawer-navigation a[aria-current="page"] { color: var(--color-primary); font-weight: 800; }
-  .no-script-navigation { display: flex; flex-wrap: wrap; gap: 16px; padding: 24px; }
-  .no-script-navigation a { text-decoration: underline; }
+  #btn-close-drawer:hover {
+    background: var(--color-surface);
+    color: var(--sara-sapphire-700);
+  }
+  .drawer-navigation {
+    display: flex;
+    flex-direction: column;
+  }
+  .drawer-navigation a {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    min-height: 48px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--sara-border-subtle);
+    color: var(--sara-text-primary);
+    transition: color 150ms ease;
+  }
+  .drawer-navigation a:hover {
+    color: var(--sara-cyan-600);
+  }
+  .drawer-navigation a[aria-current="page"] {
+    color: var(--sara-sapphire-600);
+    font-weight: 800;
+  }
+  .no-script-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 24px;
+  }
+  .no-script-navigation a {
+    text-decoration: underline;
+  }
   @media (max-width: 1199px) {
-    body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
-    .header-inner { display: none; }
+    body {
+      padding-bottom: calc(68px + env(safe-area-inset-bottom));
+    }
+    .header-inner {
+      display: none;
+    }
     .mobile-nav {
-      display: flex; position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--color-surface); border-top: 1px solid var(--color-rule);
-      align-items: center; justify-content: space-evenly; z-index: 40;
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--sara-glass-dock, rgba(255, 255, 255, 0.85));
+      backdrop-filter: blur(25px) saturate(160%);
+      -webkit-backdrop-filter: blur(25px) saturate(160%);
+      border-top: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.1));
+      box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-sm);
+      align-items: center;
+      justify-content: space-evenly;
+      z-index: 40;
       padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
     }
   }
-  @media (max-width: 767px) { #main-content { padding: 24px 16px 48px; } }
+  @media (max-width: 767px) {
+    #main-content {
+      padding: 24px 16px 48px;
+    }
+  }
 </style>

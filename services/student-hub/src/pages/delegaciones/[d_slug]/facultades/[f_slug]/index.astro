@@ -29,35 +29,35 @@ const careers = cargarCarrerasDeFacultad(faculty);
   <div class="max-w-4xl mx-auto space-y-6">
     <!-- Migas de Pan (Breadcrumbs) -->
     <div
-      class="text-xs font-mono text-text-marino/60 flex items-center gap-1.5 flex-wrap"
+      class="text-xs font-mono text-ink-3 flex items-center gap-1.5 flex-wrap"
     >
-      <a href="/" class="hover:text-acento-verde transition-colors">Inicio</a>
+      <a href="/" class="hover:text-primary transition-colors">Inicio</a>
       <span>/</span>
-      <a href="/buscar-grupo" class="hover:text-acento-verde transition-colors"
+      <a href="/buscar-grupo" class="hover:text-primary transition-colors"
         >Delegaciones</a
       >
       <span>/</span>
       <a
         href={`/delegaciones/${d_slug}`}
-        class="hover:text-acento-verde transition-colors">{delegation.name}</a
+        class="hover:text-primary transition-colors">{delegation.name}</a
       >
       <span>/</span>
-      <span class="font-bold text-acento-verde">{faculty.name}</span>
+      <span class="font-bold text-primary">{faculty.name}</span>
     </div>
 
     <!-- Encabezado -->
     <div class="space-y-2">
       <span
-        class="font-section text-xs uppercase tracking-widest font-semibold text-acento-verde"
+        class="font-mono text-xs uppercase tracking-widest font-bold text-primary"
         >Facultad / Dependencia</span
       >
       <h1
-        class="font-display text-3xl font-bold tracking-tight text-text-marino"
+        class="font-sans text-3xl font-extrabold tracking-tight text-ink"
       >
         {faculty.name}
       </h1>
       <p
-        class="font-sans text-sm text-text-marino/70 max-w-2xl leading-relaxed"
+        class="font-sans text-sm text-ink-2 max-w-2xl leading-relaxed"
       >
         Selecciona un programa educativo para ver sus grupos académicos y el
         cuerpo docente asignado.
@@ -68,20 +68,21 @@ const careers = cargarCarrerasDeFacultad(faculty);
             href={faculty.portal_url}
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1.5 text-[11px] font-section font-semibold text-acento-verde hover:underline mt-1"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-sapphire-300 mt-1 transition-colors"
           >
-            Sitio oficial de la facultad &rarr;
+            <span>Sitio oficial de la facultad</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
           </a>
         )
       }
     </div>
 
-    <hr class="academic-divider-double" />
+    <hr class="rule rule--thick" />
 
     <!-- Listado de Carreras -->
     <div class="space-y-4">
       <h2
-        class="font-section text-xs uppercase tracking-wider font-semibold text-text-marino/50 mb-4 flex items-center gap-1.5"
+        class="font-mono text-xs uppercase tracking-wider font-bold text-ink-3 mb-4 flex items-center gap-1.5"
       >
         Programas Educativos
       </h2>
@@ -92,25 +93,26 @@ const careers = cargarCarrerasDeFacultad(faculty);
             {careers.map((car) => (
               <a
                 href={`/delegaciones/${d_slug}/carreras/${car.slug}`}
-                class="border border-borde-gris p-5 bg-white rounded-sm hover:border-acento-verde transition-colors duration-150 flex flex-col justify-between group no-underline"
+                class="glass-card p-5 rounded-xl hover:border-primary/50 transition-all duration-180 flex flex-col justify-between group no-underline"
               >
                 <div>
-                  <span class="font-section text-[9px] uppercase tracking-wider font-semibold text-text-marino/40 block mb-1">
+                  <span class="font-mono text-[9px] uppercase tracking-wider font-bold text-ink-3 block mb-1">
                     Programa
                   </span>
-                  <span class="font-display text-base font-bold text-text-marino group-hover:text-acento-verde transition-colors">
+                  <span class="font-sans text-base font-bold text-ink group-hover:text-primary transition-colors">
                     {car.name}
                   </span>
                 </div>
-                <span class="link-academic text-[11px] font-semibold mt-4 block">
-                  Ver grupos acad&eacute;micos &rarr;
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary group-hover:text-sapphire-300 mt-4">
+                  <span>Ver grupos académicos</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </span>
               </a>
             ))}
           </div>
         ) : (
-          <div class="border border-borde-gris/60 border-dashed rounded-sm p-8 text-center bg-white">
-            <p class="text-xs italic text-text-marino/60 font-sans">
+          <div class="border border-rule/60 border-dashed rounded-xl p-8 text-center bg-white/50">
+            <p class="text-xs italic text-ink-3 font-sans">
               No se registran programas educativos activos en esta facultad.
             </p>
           </div>

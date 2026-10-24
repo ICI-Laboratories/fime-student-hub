@@ -4,26 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>FIME - Facultad de Ingeniería Mecánica y Eléctrica | Universidad de Colima</title>
-    <link rel="stylesheet" href="/css/header.css?v=1.1.0"/>
-    <link rel="stylesheet" href="/css/styles.css?v=2.0.0"/>
-    <link rel="stylesheet" href="/css/accessibility.css?v=1.0.0"/>
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0"/>
+    <link rel="icon" type="image/svg+xml" href="/vectors/logos/prisma/sara_app_icon_prisma_claro.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" />
+    <link rel="stylesheet" href="/css/sara-tokens.css?v=0.5.0"/>
+    <link rel="stylesheet" href="/css/header.css?v=20261023-sara05"/>
+    <link rel="stylesheet" href="/css/styles.css?v=20261023-sara05"/>
+    <link rel="stylesheet" href="/css/accessibility.css?v=20261023-sara05"/>
 </head>
 <body>
     <a class="skip-link" href="#contenido-principal">Saltar al contenido principal</a>
-    <!-- Banda primaria institucional UCOL -->
-    <div style="height: 4px; background-color: #527630; width: 100%;"></div>
+    <!-- Banda refractiva del prisma SARA & UCOL -->
+    <div style="height: 4px; background: linear-gradient(90deg, #1A367A 0%, #159AB3 35%, #0E6B47 65%, #E65642 100%); width: 100%;" aria-hidden="true"></div>
 
-    <!-- Header Institucional Swiss -->
+    <!-- Header Institucional SARA Glass OS -->
     <header class="site-header" id="site-header">
       <div class="header-inner">
-        <!-- Wordmark: "UNIVERSIDAD DE COLIMA / FIMEBot" -->
+        <!-- Wordmark: "UNIVERSIDAD DE COLIMA / FIMEBot" con ecosistema SARA -->
         <a href="/" class="wordmark" aria-label="FIMEBot — Inicio">
-          <span class="wordmark__overline">Universidad de Colima</span>
-          <span class="wordmark__title">
-            FIME<em>Bot</em>
-          </span>
+          <div class="wordmark__brand-group">
+            <img src="/vectors/logos/prisma/sara_isotipo_prisma_claro.svg" alt="" class="wordmark__logo" width="32" height="22" aria-hidden="true" />
+            <div class="wordmark__text">
+              <span class="wordmark__overline">Universidad de Colima · FIME</span>
+              <span class="wordmark__title">
+                FIME<em>Bot</em>
+              </span>
+            </div>
+          </div>
+          <span class="wordmark__badge">Ecosistema SARA</span>
         </a>
 
         <!-- Navegación primaria -->
@@ -37,10 +46,13 @@
         </nav>
 
         <button type="button" id="toggle-chat-btn" class="btn-header-chat" aria-label="Cerrar asistente virtual FimeBot" aria-expanded="true" aria-controls="fimebot-chat">
-          <span class="material-symbols-outlined" aria-hidden="true">smart_toy</span> FimeBot
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+            <path d="M4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20H5.5C4.67 20 4 19.33 4 18.5V12Z" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+            <path d="M12 8L13.1 10.9L16 12L13.1 13.1L12 16L10.9 13.1L8 12L10.9 10.9L12 8Z" fill="#FF7659" stroke="#FF7659" stroke-width="1.1" stroke-linejoin="round"/>
+          </svg>
+          FimeBot
         </button>
       </div>
-      <hr style="border: none; border-top: 1px solid #E0E0E0; margin: 0;" />
     </header>
 
     <!-- Contenido Principal -->
@@ -48,7 +60,7 @@
       <div class="page-header">
         <span class="overline overline--primary">Facultad de Ingeniería Mecánica y Eléctrica</span>
         <h1 class="page-title">Conoce la FIME y encuentra tu camino</h1>
-        <p class="page-subtitle">Explora las carreras, ubica los espacios del campus Coquimatlán y consulta a FimeBot sobre admisión, trámites y servicios de la Universidad de Colima.</p>
+        <p class="page-subtitle">Explora las carreras, ubica los espacios del campus Coquimatlán y consulta a FimeBot sobre admisión, trámites y servicios de la Universidad de Colima en el entorno digital SARA.</p>
       </div>
 
       <!-- Contenedor transformable con carrusel e interfaz de chat -->
@@ -130,9 +142,13 @@
                     </div>
                 </div>
               </div>
-              <!-- Controles del carrusel -->
-              <button type="button" class="carousel-control prev" id="prev-slide" aria-label="Imagen anterior" aria-controls="campus-slides" hidden>&lt;</button>
-              <button type="button" class="carousel-control next" id="next-slide" aria-label="Siguiente imagen" aria-controls="campus-slides" hidden>&gt;</button>
+              <!-- Controles del carrusel con SVGs -->
+              <button type="button" class="carousel-control prev" id="prev-slide" aria-label="Imagen anterior" aria-controls="campus-slides" hidden>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <button type="button" class="carousel-control next" id="next-slide" aria-label="Siguiente imagen" aria-controls="campus-slides" hidden>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
               <p class="carousel-status" aria-live="off" aria-atomic="true" hidden>
                 <span data-carousel-count aria-hidden="true">1 de 8</span>
                 <span class="visually-hidden" data-carousel-announcement></span>
@@ -143,17 +159,25 @@
           <section class="chat-section" id="fimebot-chat" aria-label="Asistente FimeBot" tabindex="-1">
               <div class="chat-header">
                   <div>
-                    <span class="overline overline--primary">ORIENTACIÓN SOBRE LA FIME</span>
+                    <span class="overline overline--secondary">ORIENTACIÓN SOBRE LA FIME</span>
                     <h2>FimeBot</h2>
                   </div>
                   <button type="button" id="close-chat-btn" aria-label="Cerrar ventana de chat">
-                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
                   </button>
               </div>
               <div class="chat-content">
                   <ul class="chatbox" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversación con FimeBot">
                       <li class="chat incoming">
-                          <span class="material-symbols-outlined" aria-hidden="true">smart_toy</span>
+                          <span class="chat-avatar" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+                              <path d="M4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20H5.5C4.67 20 4 19.33 4 18.5V12Z" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+                              <path d="M12 8L13.1 10.9L16 12L13.1 13.1L12 16L10.9 13.1L8 12L10.9 10.9L12 8Z" fill="#E65642" stroke="#E65642" stroke-width="1.1" stroke-linejoin="round"/>
+                            </svg>
+                          </span>
                           <div class="chat-bubble">
                               <p>¡Hola! Soy <strong>FimeBot</strong>. Te oriento sobre la FIME de la Universidad de Colima: carreras, admisión, becas, trámites y ubicación.</p>
                               <p>Mis respuestas incluyen fuentes oficiales. Si falta un dato, te indico dónde consultarlo.</p>
@@ -174,21 +198,66 @@
               <p class="chat-scope" id="chat-scope">Solo orientación de la FIME · No compartas contraseñas ni datos personales.</p>
           </section>
       </div>
+
+      <!-- Accesos Rápidos a StudentHUB -->
+      <section class="quick-access-section" aria-labelledby="quick-access-title">
+        <div class="section-title-group">
+          <span class="overline overline--secondary">SERVICIOS ACADÉMICOS PÚBLICOS</span>
+          <h2 id="quick-access-title" style="font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--sara-sapphire-950); margin-top: 4px;">Servicios FIME en StudentHUB</h2>
+        </div>
+        <div class="quick-access-grid">
+          <a href="/studenthub" class="quick-card">
+            <div>
+              <span class="overline overline--primary">HORARIO ACADÉMICO</span>
+              <h3 class="quick-card__title" style="margin-top: 6px;">Horarios de Clase</h3>
+              <p class="quick-card__desc" style="margin-top: 8px;">Consulta materias, aulas y horarios asignados por grupo y carrera.</p>
+            </div>
+            <span class="quick-card__action">Abrir Horario &rarr;</span>
+          </a>
+          <a href="/profesores?from=landing" class="quick-card">
+            <div>
+              <span class="overline overline--primary">DOCENTES E INVESTIGADORES</span>
+              <h3 class="quick-card__title" style="margin-top: 6px;">Directorio de Profesores</h3>
+              <p class="quick-card__desc" style="margin-top: 8px;">Conoce la semblanza, publicaciones, cubículos y contacto de la plantilla.</p>
+            </div>
+            <span class="quick-card__action">Explorar Docentes &rarr;</span>
+          </a>
+          <a href="/mapa?from=landing" class="quick-card">
+            <div>
+              <span class="overline overline--primary">ESPACIOS DEL CAMPUS</span>
+              <h3 class="quick-card__title" style="margin-top: 6px;">Mapa de Instalaciones</h3>
+              <p class="quick-card__desc" style="margin-top: 8px;">Ubica edificios, aulas y laboratorios en el campus Coquimatlán.</p>
+            </div>
+            <span class="quick-card__action">Ver Campus &rarr;</span>
+          </a>
+          <a href="/aplicaciones" class="quick-card">
+            <div>
+              <span class="overline overline--secondary">CATÁLOGO DIGITAL</span>
+              <h3 class="quick-card__title" style="margin-top: 6px;">Aplicaciones y Recursos</h3>
+              <p class="quick-card__desc" style="margin-top: 8px;">Herramientas complementarias y acceso al ecosistema SARA.</p>
+            </div>
+            <span class="quick-card__action">Ver Catálogo &rarr;</span>
+          </a>
+        </div>
+      </section>
     </main>
 
-    <!-- Footer Institucional Swiss -->
+    <!-- Footer Institucional SARA Glass OS -->
     <footer class="main-footer">
         <div class="footer-inner">
-          <span style="font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #646464;">
-            FIME · UNIVERSIDAD DE COLIMA
-          </span>
-          <span style="font-size: 0.625rem; color: #646464;">
-            SISTEMA DE INFORMACIÓN ACADÉMICA · STUDENTHUB
+          <div class="footer-brand">
+            <img src="/vectors/logos/prisma/sara_isotipo_prisma_claro.svg" alt="" width="22" height="15" aria-hidden="true" />
+            <span style="font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">
+              FIME · UNIVERSIDAD DE COLIMA
+            </span>
+          </div>
+          <span style="font-size: 0.6875rem; color: var(--sara-text-secondary);">
+            ECOSISTEMA DIGITAL ACADÉMICO SARA v0.5.0 · STUDENTHUB
           </span>
         </div>
     </footer>
 
-    <script src="/js/chatbot.js?v=2.1.0" defer></script>
+    <script src="/js/chatbot.js?v=20261023-sara05" defer></script>
     <script type="module" src="/js/carousel.js?v=1.0.0"></script>
 </body>
 </html>

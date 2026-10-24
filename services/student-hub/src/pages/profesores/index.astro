@@ -77,7 +77,10 @@ try {
           {activeGroup ? (
             <>
               Docentes asignados al grupo <strong>{activeGroup.name}</strong> ({profesores.length} profesores) &mdash; 
-              <a href="/profesores?from=landing" class="link" style="margin-left: 6px; font-weight: 700; color: var(--color-primary);">[Ver directorio completo FIME]</a>
+              <a href="/profesores?from=landing" class="inline-flex items-center gap-1 font-bold text-primary hover:text-sapphire-300 transition-colors ml-1.5">
+                <span>Ver directorio completo FIME</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </a>
             </>
           ) : (
             <>
@@ -171,3 +174,9 @@ try {
     document.addEventListener("astro:page-load", setupTeacherSearch);
   </script>
 </InstitutionalLayout>
+
+<style>
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-size: clamp(1.75rem, 4vw, 3rem); margin: 10px 0; overflow-wrap: anywhere; }
+  .page-subtitle { color: var(--color-ink-2); line-height: 1.5; }
+</style>

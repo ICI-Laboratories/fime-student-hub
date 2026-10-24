@@ -22,9 +22,9 @@ const currentYear = new Date().getFullYear();
 const yearsOfService = currentYear - admissionYear;
 ---
 
-<div class="py-2">
-  <!-- Foto de perfil (Cuadrada, Grayscale de Alto Contraste) -->
-  <div class="mb-6 w-full aspect-square border border-rule-strong overflow-hidden relative bg-muted flex items-center justify-center">
+<div class="identity-card">
+  <!-- Foto de perfil -->
+  <div class="identity-card__photo-frame">
     {photoUrl ? (
       <img
         src={photoUrl}
@@ -36,14 +36,14 @@ const yearsOfService = currentYear - admissionYear;
         onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');"
       />
     ) : null}
-    <div class={`w-full h-full ${photoUrl ? 'hidden' : 'flex'} items-center justify-center bg-stone-200 text-primary font-black text-4xl select-none font-mono uppercase`}>
+    <div class={`w-full h-full ${photoUrl ? 'hidden' : 'flex'} items-center justify-center bg-[#E0EBFF] text-[#1A367A] font-black text-4xl select-none font-mono uppercase`}>
       {(fullName || '').replace(/^(dr\.|dra\.|mtro\.|mtra\.|lic\.|ing\.|arq\.)\s*/i, '').split(/\s+/).filter(Boolean).map(n => n[0]).slice(0, 2).join('')}
     </div>
   </div>
 
   <!-- Identidad -->
   <div class="text-left mb-6">
-    <h1 class="text-xl sm:text-2xl font-black text-ink leading-none tracking-tight">
+    <h1 class="text-xl sm:text-2xl font-black text-ink leading-tight tracking-tight">
       {fullName}
     </h1>
     <span class="overline overline--primary mt-2">
@@ -51,7 +51,7 @@ const yearsOfService = currentYear - admissionYear;
     </span>
   </div>
 
-  <hr class="rule" style="margin: 24px 0;" />
+  <hr class="rule" style="margin: 20px 0;" />
 
   <!-- Detalles -->
   <dl class="space-y-4 text-left">
@@ -81,3 +81,23 @@ const yearsOfService = currentYear - admissionYear;
     )}
   </dl>
 </div>
+
+<style>
+  .identity-card {
+    padding: 8px 0;
+  }
+  .identity-card__photo-frame {
+    margin-bottom: 24px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.14));
+    border-radius: var(--sara-radius-md, 12px);
+    overflow: hidden;
+    position: relative;
+    background: var(--sara-sapphire-50, #F2F6FF);
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>

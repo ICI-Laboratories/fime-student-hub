@@ -25,59 +25,60 @@ const groups = await cargarGruposDeCarrera(career.id);
 >
   <div class="max-w-4xl mx-auto space-y-6">
     <!-- Migas de Pan (Breadcrumbs) -->
-    <div class="text-xs font-mono text-text-marino/60 flex items-center gap-1.5 flex-wrap">
-      <a href="/" class="hover:text-acento-verde transition-colors">Inicio</a>
+    <div class="text-xs font-mono text-ink-3 flex items-center gap-1.5 flex-wrap">
+      <a href="/" class="hover:text-primary transition-colors">Inicio</a>
       <span>/</span>
-      <a href="/buscar-grupo" class="hover:text-acento-verde transition-colors">Delegaciones</a>
+      <a href="/buscar-grupo" class="hover:text-primary transition-colors">Delegaciones</a>
       <span>/</span>
-      <a href={`/delegaciones/${d_slug}`} class="hover:text-acento-verde transition-colors">{delegation.name}</a>
+      <a href={`/delegaciones/${d_slug}`} class="hover:text-primary transition-colors">{delegation.name}</a>
       {faculty && (
         <>
           <span>/</span>
-          <a href={`/delegaciones/${d_slug}/facultades/${faculty.slug}`} class="hover:text-acento-verde transition-colors">{faculty.name}</a>
+          <a href={`/delegaciones/${d_slug}/facultades/${faculty.slug}`} class="hover:text-primary transition-colors">{faculty.name}</a>
         </>
       )}
       <span>/</span>
-      <span class="font-bold text-acento-verde">{career.name}</span>
+      <span class="font-bold text-primary">{career.name}</span>
     </div>
 
     <!-- Encabezado -->
     <div class="space-y-2">
-      <span class="font-section text-xs uppercase tracking-widest font-semibold text-acento-verde">Programa de Estudios</span>
-      <h1 class="font-display text-3xl font-bold tracking-tight text-text-marino">{career.name}</h1>
-      <p class="font-sans text-sm text-text-marino/70 max-w-2xl leading-relaxed">
+      <span class="font-mono text-xs uppercase tracking-widest font-bold text-primary">Programa de Estudios</span>
+      <h1 class="font-sans text-3xl font-extrabold tracking-tight text-ink">{career.name}</h1>
+      <p class="font-sans text-sm text-ink-2 max-w-2xl leading-relaxed">
         Lista de grupos académicos activos. Selecciona un grupo para ver el cuerpo docente asignado a sus materias.
       </p>
     </div>
 
-    <hr class="academic-divider-double" />
+    <hr class="rule rule--thick" />
 
     <!-- Listado de Grupos -->
     <div class="space-y-4">
-      <h2 class="font-section text-xs uppercase tracking-wider font-semibold text-text-marino/50 mb-4">Grupos Académicos</h2>
+      <h2 class="font-mono text-xs uppercase tracking-wider font-bold text-ink-3 mb-4">Grupos Académicos</h2>
       
       {groups.length > 0 ? (
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {groups.map(grp => (
             <a 
               href={`/delegaciones/${d_slug}/carreras/${career.slug}/grupos/${grp.slug}`} 
-              class="border border-borde-gris p-5 bg-white rounded-sm hover:border-acento-verde transition-colors duration-150 flex flex-col justify-between group no-underline"
+              class="glass-card p-5 rounded-xl hover:border-primary/50 transition-all duration-180 flex flex-col justify-between group no-underline"
             >
               <div>
-                <span class="font-section text-[9px] uppercase tracking-wider font-semibold text-acento-verde block mb-1">Grupo</span>
-                <span class="font-display text-base font-bold text-text-marino group-hover:text-acento-verde transition-colors">{grp.name}</span>
-                <span class="text-[10px] text-text-marino/50 block font-mono mt-1">Período: {grp.academic_period || 'N/A'}</span>
-                <span class="text-[10px] text-text-marino/50 block font-mono">Turno: {grp.shift || 'N/A'}</span>
+                <span class="font-mono text-[9px] uppercase tracking-wider font-bold text-primary block mb-1">Grupo</span>
+                <span class="font-sans text-base font-bold text-ink group-hover:text-primary transition-colors">{grp.name}</span>
+                <span class="text-[10px] text-ink-3 block font-mono mt-1">Período: {grp.academic_period || 'N/A'}</span>
+                <span class="text-[10px] text-ink-3 block font-mono">Turno: {grp.shift || 'N/A'}</span>
               </div>
-              <span class="link-academic text-[11px] font-semibold mt-4 block">
-                Ver claustro del grupo &rarr;
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary group-hover:text-sapphire-300 mt-4">
+                <span>Ver claustro del grupo</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </span>
             </a>
           ))}
         </div>
       ) : (
-        <div class="border border-borde-gris/60 border-dashed rounded-sm p-8 text-center bg-white">
-          <p class="text-xs italic text-text-marino/60 font-sans">
+        <div class="border border-rule/60 border-dashed rounded-xl p-8 text-center bg-white/50">
+          <p class="text-xs italic text-ink-3 font-sans">
             No se registran grupos activos para este programa académico.
           </p>
         </div>

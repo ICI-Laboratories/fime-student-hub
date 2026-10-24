@@ -72,7 +72,10 @@ if (activeGroupSlug) {
     <div class="page-header__actions">
       <!-- Botón minimalista de cierre de sesión -->
       <button class="btn-logout" aria-label="Cerrar sesión">
-        Salir del sistema
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        <span>Salir del sistema</span>
       </button>
     </div>
   </div>
@@ -118,10 +121,10 @@ if (activeGroupSlug) {
       <h2 class="section-title">Materias<br />Matriculadas</h2>
       <a
         href="/materias"
-        class="link"
-        style="font-size: 0.75rem; margin-top: 12px; display: inline-block;"
+        class="inline-flex items-center gap-1.5 text-xs text-primary hover:text-sapphire-300 font-semibold mt-3 transition-colors"
       >
-        Ver detalles en panel →
+        <span>Ver detalles en panel</span>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
       </a>
     </div>
     <div class="profile-section__content">
@@ -172,7 +175,9 @@ if (activeGroupSlug) {
                       class="prof-card__img"
                     />
                   ) : (
-                    <div class="prof-card__img-placeholder">[•_•]</div>
+                    <div class="prof-card__img-placeholder">
+                      {prof.name ? prof.name.split(" ").slice(0, 2).map((n: string) => n[0]).join("") : "DOC"}
+                    </div>
                   )}
                 </div>
                 <div class="prof-card__info">
@@ -306,20 +311,26 @@ if (activeGroupSlug) {
   }
 
   .btn-logout {
-    background: transparent;
-    border: 1px solid var(--color-rule-strong);
-    padding: 10px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--sara-glass-bg);
+    border: 1px solid var(--sara-glass-border);
+    border-radius: 10px;
+    min-height: 44px;
+    padding: 10px 18px;
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-ink);
     cursor: pointer;
-    transition: all 120ms;
+    transition: all 150ms ease;
   }
   .btn-logout:hover {
-    background: var(--color-ink);
-    color: var(--color-surface);
+    background: var(--sara-sapphire-500);
+    border-color: var(--sara-sapphire-500);
+    color: #ffffff;
   }
 
   /* Secciones Estilo Suizo (2/3 - 1/3) */
@@ -405,7 +416,9 @@ if (activeGroupSlug) {
   .prof-card__img-container {
     width: 64px;
     height: 64px;
-    border: 1px solid var(--color-rule-strong);
+    border: 1px solid var(--sara-glass-border);
+    border-radius: 12px;
+    overflow: hidden;
     flex-shrink: 0;
   }
   .prof-photo {
@@ -416,14 +429,14 @@ if (activeGroupSlug) {
   .prof-card__img-placeholder {
     width: 100%;
     height: 100%;
-    background: var(--color-muted);
+    background: rgba(26, 54, 122, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: var(--font-mono);
     font-size: 0.875rem;
-    font-weight: 700;
-    color: var(--color-ink-3);
+    font-weight: 800;
+    color: var(--sara-sapphire-600);
   }
   .prof-card__info {
     display: flex;

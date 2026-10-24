@@ -21,28 +21,12 @@ interface Props {
 
 const { courses = [], theses = [], showOnly } = Astro.props;
 
-// Extraer solo los 3 cursos principales
+// Extraer solo los cursos
 const visibleCourses = courses;
 
-// Extraer máximo 2 tesis para la vista principal
+// Extraer tesis
 const visibleTheses = theses;
 const extraThesesCount = theses.length - 2;
-
-// Función para abreviar nombres de materias y mantener los badges pequeños
-function abbreviateCourse(name: string) {
-  let short = name
-    .replace(/Fundamentos de /gi, "Fund. ")
-    .replace(/Programación /gi, "Prog. ")
-    .replace(/ e /gi, " y ")
-    .replace(/Orientada a Objetos/gi, "OO")
-    .replace(/Inteligencia Artificial/gi, "IA")
-    .replace(/Ciencia de Datos/gi, "CD");
-
-  if (short.length > 25) {
-    short = short.slice(0, 22) + "...";
-  }
-  return short;
-}
 ---
 
 <div class="space-y-6">
@@ -119,9 +103,10 @@ function abbreviateCourse(name: string) {
               <div class="pt-2 text-right">
                 <button
                   data-open="modal-tesis"
-                  class="link font-mono text-xs font-bold cursor-pointer"
+                  class="link font-mono text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 min-h-[44px]"
                 >
-                  +{extraThesesCount} tesis más →
+                  <span>+{extraThesesCount} tesis más</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </button>
               </div>
             )}
@@ -140,18 +125,16 @@ function abbreviateCourse(name: string) {
 <!-- MODALES DE REGISTRO COMPLETO (Vanilla JS) -->
 <!-- ========================================== -->
 
-<!-- Modal Tesis -->
+<!-- Modal Tesis SARA Glass OS -->
 {(!showOnly || showOnly === 'theses') && (
   <div
     id="modal-tesis"
-    class="modal-overlay fixed inset-0 bg-ink/60 hidden items-center justify-center p-4 z-50 transition-opacity duration-150"
-    style="background: rgba(26,26,26,0.6);"
+    class="modal-overlay fixed inset-0 bg-[#0A1329]/50 hidden items-center justify-center p-4 z-50 backdrop-blur-sm transition-opacity duration-150"
   >
     <div
-      class="bg-white w-full max-w-2xl max-h-[85vh] flex flex-col relative"
-      style="background: var(--color-surface);"
+      class="w-full max-w-2xl max-h-[85vh] flex flex-col relative bg-white border border-[#1A367A]/15 rounded-2xl shadow-2xl overflow-hidden"
     >
-      <div style="height: 3px; background-color: var(--color-primary);"></div>
+      <div style="height: 4px; background: linear-gradient(90deg, #1A367A 0%, #159AB3 35%, #0E6B47 65%, #E65642 100%);"></div>
 
       <!-- Encabezado Modal -->
       <div
@@ -159,16 +142,19 @@ function abbreviateCourse(name: string) {
       >
         <div>
           <span class="overline overline--primary">Expediente de Grados</span>
-          <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--color-ink); margin-top: 4px; line-height: 1.2;">
+          <h2 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--color-ink); margin-top: 4px; line-height: 1.2;">
             Tesis Asesoradas y Dirigidas
           </h2>
         </div>
         <button
           class="close-modal"
           aria-label="Cerrar detalle"
-          style="background: none; border: none; font-size: 1.5rem; color: var(--color-ink-3); cursor: pointer; padding: 0 4px; line-height: 1;"
+          style="background: var(--sara-sapphire-50); border: 1px solid var(--sara-border-glass); border-radius: 9999px; color: var(--sara-text-secondary); cursor: pointer; padding: 8px; min-width: 44px; min-height: 44px; display: grid; place-items: center;"
         >
-          ×
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
       </div>
 

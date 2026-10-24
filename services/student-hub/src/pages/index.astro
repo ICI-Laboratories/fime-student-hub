@@ -258,7 +258,7 @@ function getDailySchedule(day: string) {
         <h1 id="semester-heading" tabindex="-1" aria-describedby="semester-progress selected-career-label" style="font-size: 3rem; font-weight: 900; letter-spacing: -0.04em; color: var(--color-ink); margin-top: 8px; line-height: 1.1; margin-bottom: 8px;">
           Selecciona tu Semestre
         </h1>
-        <p id="selected-career-label" style="font-size: 1.125rem; font-weight: 700; color: var(--color-primary); margin-bottom: 36px;"></p>
+        <p id="selected-career-label" style="font-size: 1.125rem; font-weight: 700; color: var(--sara-sapphire-700); margin-bottom: 36px;"></p>
 
         <div id="semesters-grid" class="selection-grid" style="margin-bottom: 40px;"></div>
         
@@ -266,9 +266,10 @@ function getDailySchedule(day: string) {
           id="btn-back-to-career"
           type="button"
           aria-label="Volver a elegir carrera"
-          style="padding: 10px 18px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: transparent; border: 1px solid var(--color-rule-strong); color: var(--color-ink); cursor: pointer; transition: all 150ms;"
+          class="btn btn--ghost"
         >
-          ← Anterior
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Anterior
         </button>
       </section>
 
@@ -278,7 +279,7 @@ function getDailySchedule(day: string) {
         <h1 id="group-heading" tabindex="-1" aria-describedby="group-progress selected-career-sem-label" style="font-size: 3rem; font-weight: 900; letter-spacing: -0.04em; color: var(--color-ink); margin-top: 8px; line-height: 1.1; margin-bottom: 8px;">
           Selecciona tu Grupo
         </h1>
-        <p id="selected-career-sem-label" style="font-size: 1.125rem; font-weight: 700; color: var(--color-primary); margin-bottom: 36px;"></p>
+        <p id="selected-career-sem-label" style="font-size: 1.125rem; font-weight: 700; color: var(--sara-sapphire-700); margin-bottom: 36px;"></p>
 
         <div id="groups-grid" class="selection-grid" style="margin-bottom: 40px;"></div>
         
@@ -286,9 +287,10 @@ function getDailySchedule(day: string) {
           id="btn-back-to-semester"
           type="button"
           aria-label="Volver a elegir semestre"
-          style="padding: 10px 18px; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; background: transparent; border: 1px solid var(--color-rule-strong); color: var(--color-ink); cursor: pointer; transition: all 150ms;"
+          class="btn btn--ghost"
         >
-          ← Anterior
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Anterior
         </button>
       </section>
 
@@ -388,7 +390,10 @@ function getDailySchedule(day: string) {
           {activeGroup.tutor_name && (
             <> &mdash; Tutor: {activeGroup.tutor_name}</>
           )}
-          <a href="/studenthub?select_group=true" class="link" style="margin-left: 12px; font-weight: 700; color: var(--color-primary);">[Cambiar Grupo]</a>
+          <a href="/studenthub?select_group=true" class="link" style="margin-left: 12px; font-weight: 700; color: var(--sara-sapphire-600); display: inline-flex; align-items: center; gap: 4px;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/></svg>
+            Cambiar Grupo
+          </a>
         </p>
       )}
     </div>
@@ -733,11 +738,14 @@ function getDailySchedule(day: string) {
     style="
       margin: auto;
       padding: 0;
-      border: none;
+      border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
+      border-radius: var(--sara-radius-lg, 16px);
+      box-shadow: var(--sara-shadow-glass-lg);
       width: min(680px, calc(100% - 32px));
       max-height: 90dvh;
       background: var(--color-surface);
       color: var(--color-ink);
+      overflow: hidden;
     "
   >
     <div
@@ -751,8 +759,8 @@ function getDailySchedule(day: string) {
         position: relative;
       "
     >
-      <!-- Banda de color superior del modal -->
-      <div style="height: 3px; background-color: var(--color-secondary);"></div>
+      <!-- Banda refractiva del prisma en el modal -->
+      <div style="height: 4px; background: linear-gradient(90deg, #1A367A 0%, #159AB3 35%, #0E6B47 65%, #E65642 100%);"></div>
 
       <!-- Header del modal -->
       <div style="
@@ -793,18 +801,25 @@ function getDailySchedule(day: string) {
           autofocus
           aria-label="Cerrar detalle"
           style="
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--color-ink-3);
+            background: var(--sara-sapphire-50);
+            border: 1px solid var(--sara-border-glass);
+            border-radius: var(--sara-radius-pill);
+            color: var(--sara-text-secondary);
             cursor: pointer;
-            padding: 0 4px;
+            padding: 8px;
             min-width: 44px;
             min-height: 44px;
-            line-height: 1;
+            display: grid;
+            place-items: center;
             flex-shrink: 0;
+            transition: all 150ms ease;
           "
-        >×</button>
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
 
       <hr class="rule" />
@@ -885,8 +900,8 @@ function getDailySchedule(day: string) {
               <!-- Foto del docente -->
               <div style="width: 64px; height: 64px; border: 1px solid var(--color-rule-strong); overflow: hidden; flex-shrink: 0;">
                 <img id="modal-prof-img" alt="Foto del docente" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
-                <div id="modal-prof-img-placeholder" style="width: 100%; height: 100%; background: var(--color-muted); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.875rem; font-weight: 700; color: var(--color-ink-3);">
-                  [•_•]
+                <div id="modal-prof-img-placeholder" style="width: 100%; height: 100%; background: var(--sara-sapphire-50); display: flex; align-items: center; justify-content: center; color: var(--sara-sapphire-600);">
+                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
                 </div>
               </div>
               <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
@@ -1052,29 +1067,36 @@ function getDailySchedule(day: string) {
 
 <style is:global>
   /* ══════════════════════════════════════════════════
-     SELECTION WIZARD STYLES (GLOBAL PARA ELEMENTOS JS)
+     SELECTION WIZARD STYLES (SARA GLASS OS)
      ══════════════════════════════════════════════════ */
   .selection-card-btn {
-    background: transparent;
-    border: none;
-    border-left: 3px solid var(--color-primary);
-    padding: 20px 16px;
+    background: var(--sara-glass-strong, rgba(255, 255, 255, 0.88));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
+    border-left: 4px solid var(--sara-sapphire-600, #224FA8);
+    border-radius: var(--sara-radius-md, 12px);
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular, rgba(255,255,255,0.9)), var(--sara-shadow-glass-sm);
+    padding: 22px 20px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     text-align: left;
-    transition: opacity 120ms;
-    font-family: var(--font-sans);
-    font-size: 1.5rem;
+    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+    font-family: var(--font-display);
+    font-size: 1.35rem;
     font-weight: 800;
-    letter-spacing: -0.03em;
-    color: var(--color-ink);
-    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--sara-sapphire-950, #0A1329);
+    line-height: 1.2;
     width: 100%;
   }
 
   .selection-card-btn:hover {
-    opacity: 0.7;
+    transform: translateY(-2px);
+    border-color: var(--sara-cyan-500, #1CB3CF);
+    border-left-color: var(--sara-cyan-600, #159AB3);
+    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-md);
   }
 
   .selection-card-btn:focus-visible {

@@ -340,10 +340,13 @@ try {
     font-weight: 600;
     color: var(--color-ink-2);
     text-decoration: none;
-    transition: color 120ms;
+    transition: color 120ms, transform 120ms;
     background: none;
     border: none;
-    padding: 0;
+    padding: 0 4px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
     cursor: pointer;
     font-family: var(--font-sans);
     text-align: left;
@@ -413,10 +416,11 @@ try {
   }
 
   .timeline__marker {
-    width: 13px;
-    height: 13px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    background-color: var(--color-ink);
+    background-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(21, 154, 179, 0.25);
     position: relative;
     margin-top: 6px;
     margin-left: 6px;
@@ -425,11 +429,11 @@ try {
   .timeline__marker::after {
     content: "";
     position: absolute;
-    top: 13px;
+    top: 14px;
     left: 6px;
-    width: 1px;
+    width: 2px;
     height: 300px;
-    background-color: var(--color-rule-strong);
+    background-color: rgba(26, 54, 122, 0.15);
     z-index: 1;
   }
   .timeline__item:last-child .timeline__marker::after {
@@ -437,7 +441,8 @@ try {
   }
 
   .timeline__item--past .timeline__marker {
-    background-color: var(--color-rule-strong);
+    background-color: var(--color-ink-3);
+    box-shadow: none;
   }
   .timeline__item--past .date-big,
   .timeline__item--past .exam-title,
@@ -463,9 +468,14 @@ try {
     display: grid;
     grid-template-columns: 1fr;
     gap: 16px;
-    padding: 16px;
-    background-color: var(--color-muted);
-    border-left: 2px solid var(--color-rule-strong);
+    padding: 16px 20px;
+    background: var(--sara-glass-bg);
+    border: 1px solid var(--sara-glass-border);
+    border-left: 3px solid var(--color-primary);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: var(--sara-glass-shadow);
   }
   @media (min-width: 640px) {
     .exam-meta-grid {

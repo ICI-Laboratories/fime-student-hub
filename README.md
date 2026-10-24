@@ -1,8 +1,34 @@
-> Estado actual: se conserva el diseño original y el acceso público a mapa, horarios, profesores y materias. El catálogo en `/aplicaciones` es un apartado adicional; la cuenta SARA es opcional para la navegación académica. El autenticador local no se ejecuta. Ver [registro del despliegue](docs/DEPLOYMENT-2026-09-24.md).
+> Estado actual: interfaz migrada a SARA v0.5.0 Prisma Glass OS (Zafiro, Cian, Coral), preservando el acceso público anónimo a mapa, horarios, profesores y materias. La cuenta central SARA es estrictamente opcional. Ver [registro del despliegue](docs/DEPLOYMENT-2026-09-24.md).
 
 # Student Hub - Producción Standalone
 
 Este repositorio contiene la versión migrada e independiente de **Student Hub** lista para ser desplegada en producción.
+
+---
+
+## [UI] Diseño e Identidad Visual — SARA v0.5.0 Prisma Glass OS
+
+La interfaz web de todos los servicios públicos (`services/landing` y `services/student-hub`) ha sido migrada al lenguaje de diseño **SARA v0.5.0 Prisma Glass OS**:
+
+- **Paleta Cromática Oficial:**
+  - Primario Zafiro (`#1A367A` / `--sara-sapphire-500` / `--sara-sapphire-700`)
+  - Acento Cian Óptico (`#159AB3` / `--sara-cyan-500` / `--sara-cyan-600`)
+  - Acento Coral Refracción (`#E65642` / `--sara-coral-600`)
+  - Verde Institucional UdeC (`#0E6B47` / `--sara-udec-green`)
+  - Banda Refractiva SARA Möbius: gradiente continuo Zafiro &rarr; Cian &rarr; Verde UdeC &rarr; Coral.
+- **Tipografía Institucional:**
+  - `Manrope` (Display / Títulos y Jerarquía Numérica)
+  - `Inter` (Cuerpo de Lectura y Controles UI)
+  - `JetBrains Mono` (Datos Académicos, Indicadores y Claves)
+- **Glass OS & Caústicas de Luz:**
+  - Dock superior y barra móvil flotante con `backdrop-filter: blur(20px)`, specular rim de 1px (`rgba(255, 255, 255, 0.4)` / `rgba(26, 54, 122, 0.14)`).
+  - Superficies de lectura opacas y contrastadas para máxima legibilidad.
+- **Iconografía Vectorial & Accesibilidad:**
+  - Reemplazo total de emojis y caracteres ASCII operativos (`[•_•]`, `[o_o]`, `[⇄]`, flechas de texto) por vectores SVG limpios y SVGs oficiales de la marca SARA.
+  - Objetivos táctiles mínimos de 44x44px en móviles (360px+), soporte de `env(safe-area-inset-bottom)`, navegación por teclado (`:focus-visible`), y soporte completo para preferencias de movimiento reducido (`prefers-reduced-motion`).
+- **Acceso Público Académico Libre:**
+  - Se mantiene íntegro el acceso anónimo y sin login a horarios, planos de campus, semestres, directores, docentes, asignaturas y fechas de evaluación.
+  - La cuenta SARA es un servicio de ecosistema central opcional y no interfiere con la consulta académica pública.
 
 ---
 
