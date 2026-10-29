@@ -8,26 +8,76 @@ if (Astro.url.searchParams.has("select_group") || Astro.url.searchParams.has("gr
   return Astro.redirect(`/studenthub${Astro.url.search}`);
 }
 
-const academicPrograms = [
+interface AcademicProgram {
+  name: string;
+  code: string;
+  plan: string;
+  url: string;
+  modality?: string;
+  isOnline?: boolean;
+  svg: string;
+}
+
+const undergraduatePrograms: AcademicProgram[] = [
+  {
+    name: "Ingeniería de Datos e Inteligencia Artificial",
+    code: "IDIA",
+    plan: "Plan 465",
+    url: "https://portal.ucol.mx/fime/c-465.htm",
+    modality: "En línea",
+    isOnline: true,
+    svg: `<path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93v2.14a4 4 0 0 1 2.25 1.43l3.5-1.75a4 4 0 1 1 .9 1.79l-3.5 1.75a4 4 0 0 1-7.8 0l-3.5-1.75a4 4 0 1 1 .9-1.79l3.5 1.75a4 4 0 0 1 2.25-1.43V9.93C7.4 9.58 6 7.95 6 6a4 4 0 0 1 4-4h2z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
   {
     name: "Ingeniería en Computación Inteligente",
     code: "ICI",
+    plan: "Plan 349",
+    url: "https://portal.ucol.mx/fime/c-349.htm",
+    modality: "Escolarizada",
     svg: `<path d="M16 18l6-6-6-6M8 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
   },
   {
-    name: "Ingeniería Mecatrónica",
+    name: "Ingeniería en Mecatrónica",
     code: "IMEC",
+    plan: "Plan 418",
+    url: "https://portal.ucol.mx/fime/c-418.htm",
+    modality: "Escolarizada",
     svg: `<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="15" r="1.5" fill="currentColor"/><path d="M15 9h-2v6h2" stroke="currentColor" stroke-width="1.5"/>`,
   },
   {
-    name: "Ingeniería Mecánica Electricista",
-    code: "IME",
-    svg: `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
+    name: "Ingeniería en Sistemas Electrónicos y Telecomunicaciones",
+    code: "ISET",
+    plan: "Plan 99",
+    url: "https://portal.ucol.mx/fime/c-99.htm",
+    modality: "Escolarizada",
+    svg: `<path d="M4.93 19.07a10 10 0 0 1 0-14.14M7.76 16.24a6 6 0 0 1 0-8.48M12 12h.01M16.24 7.76a6 6 0 0 1 0 8.48M19.07 4.93a10 10 0 0 1 0 14.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
   },
   {
-    name: "Ingeniería en Tecnologías e Internet",
-    code: "ITI",
-    svg: `<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.5"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="1.5"/>`,
+    name: "Ingeniero Mecánico Electricista",
+    code: "IME",
+    plan: "Plan 371",
+    url: "https://portal.ucol.mx/fime/c-371.htm",
+    modality: "Escolarizada",
+    svg: `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+];
+
+const graduatePrograms: AcademicProgram[] = [
+  {
+    name: "Maestría en Ingeniería Aplicada",
+    code: "MIA",
+    plan: "Plan 352",
+    url: "https://portal.ucol.mx/fime/c-352.htm",
+    modality: "Posgrado",
+    svg: `<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.75"/>`,
+  },
+  {
+    name: "Maestría en Ingeniería de Procesos",
+    code: "MIP",
+    plan: "Plan 408",
+    url: "https://portal.ucol.mx/fime/c-408.htm",
+    modality: "Posgrado",
+    svg: `<path d="M10 2v7.31a2 2 0 0 1-.37 1.17l-5.26 7.89A2 2 0 0 0 6 21h12a2 2 0 0 0 1.63-2.63l-5.26-7.89A2 2 0 0 1 14 9.31V2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="2" x2="16" y2="2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="6.5" y1="16" x2="17.5" y2="16" stroke="currentColor" stroke-width="1.5"/>`,
   },
 ];
 ---
@@ -83,41 +133,93 @@ const academicPrograms = [
     <!-- Accesos Rápidos a StudentHUB -->
     <QuickAccessGrid />
 
-    <!-- Oferta Académica FIME (100% Vectorial, Cero Emojis) -->
+    <!-- Oferta Académica FIME: Licenciaturas y Posgrados Oficiales -->
     <section class="programs-section" aria-labelledby="programs-title">
       <div class="programs-header">
         <div class="programs-badge">
           <span class="programs-badge-dot"></span>
-          <span>PROGRAMAS DE LICENCIATURA</span>
+          <span>OFERTA EDUCATIVA OFICIAL</span>
         </div>
         <h2 id="programs-title" class="programs-title">Ingenierías de la FIME</h2>
-        <p class="programs-lead">Formamos profesionales de excelencia técnica con visión humanista e innovadora en el campus Coquimatlán.</p>
+        <p class="programs-lead">Programas de licenciatura e ingeniería avalados por la Universidad de Colima en modalidades escolarizada y en línea.</p>
       </div>
 
       <div class="programs-grid">
-        {academicPrograms.map((program) => (
+        {undergraduatePrograms.map((program) => (
           <div class="program-card">
-            <div class="program-icon-box" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" set:html={program.svg} />
+            <div class="program-card-top">
+              <div class="program-icon-box" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" set:html={program.svg} />
+              </div>
+              <div class="program-badges-group">
+                <span class="program-code">{program.code}</span>
+                {program.isOnline ? (
+                  <span class="program-tag program-tag--online">En línea</span>
+                ) : (
+                  <span class="program-tag">{program.plan}</span>
+                )}
+              </div>
             </div>
             <div class="program-info">
-              <span class="program-code">{program.code}</span>
               <h3 class="program-name">{program.name}</h3>
             </div>
             <a
-              href={`https://www.ucol.mx/oferta-educativa/licenciatura`}
+              href={program.url}
               target="_blank"
               rel="noopener noreferrer"
               class="program-link"
-              aria-label={`Ver plan de estudios de ${program.name}`}
+              aria-label={`Ficha oficial y plan de estudios de ${program.name} (enlace externo portal UCOL)`}
             >
-              Plan de estudios
+              Ficha y plan de estudios
               <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z" clip-rule="evenodd" />
               </svg>
             </a>
           </div>
         ))}
+      </div>
+
+      <!-- Posgrados Oficiales de la FIME -->
+      <div class="graduate-subgroup">
+        <div class="programs-header programs-header--sub">
+          <div class="programs-badge programs-badge--posgrado">
+            <span class="programs-badge-dot programs-badge-dot--posgrado"></span>
+            <span>ESTUDIOS AVANZADOS</span>
+          </div>
+          <h3 class="programs-subtitle">Posgrados y Maestrías</h3>
+          <p class="programs-lead">Formación de alta especialización e investigación aplicada a la tecnología y procesos industriales.</p>
+        </div>
+
+        <div class="programs-grid programs-grid--graduate">
+          {graduatePrograms.map((program) => (
+            <div class="program-card program-card--graduate">
+              <div class="program-card-top">
+                <div class="program-icon-box program-icon-box--graduate" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" set:html={program.svg} />
+                </div>
+                <div class="program-badges-group">
+                  <span class="program-code program-code--graduate">{program.code}</span>
+                  <span class="program-tag program-tag--graduate">{program.plan}</span>
+                </div>
+              </div>
+              <div class="program-info">
+                <h4 class="program-name">{program.name}</h4>
+              </div>
+              <a
+                href={program.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="program-link program-link--graduate"
+                aria-label={`Ficha oficial y plan de estudios de ${program.name} (enlace externo portal UCOL)`}
+              >
+                Ficha y convocatoria
+                <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z" clip-rule="evenodd" />
+                </svg>
+              </a>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
 
@@ -361,6 +463,100 @@ const academicPrograms = [
     transform: scale(1.08);
     background: rgba(21, 154, 179, 0.12);
     color: var(--sara-cyan-700, #0E7B91);
+  }
+
+  .program-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .program-badges-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .program-tag {
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: var(--sara-radius-pill, 9999px);
+    background: rgba(26, 54, 122, 0.08);
+    color: var(--sara-sapphire-700, #1A367A);
+    text-transform: uppercase;
+  }
+
+  .program-tag--online {
+    background: rgba(21, 154, 179, 0.14);
+    color: var(--sara-cyan-800, #0B6477);
+    border: 1px solid rgba(21, 154, 179, 0.3);
+  }
+
+  .program-tag--graduate {
+    background: rgba(14, 107, 71, 0.12);
+    color: var(--sara-jade-700, #0A5236);
+    border: 1px solid rgba(14, 107, 71, 0.25);
+  }
+
+  .graduate-subgroup {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed rgba(26, 54, 122, 0.16);
+  }
+
+  .programs-header--sub {
+    margin-bottom: 0.25rem;
+  }
+
+  .programs-badge--posgrado {
+    color: var(--sara-jade-700, #0A5236);
+  }
+
+  .programs-badge-dot--posgrado {
+    background-color: var(--sara-jade-600, #0E6B47);
+  }
+
+  .programs-subtitle {
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: clamp(1.125rem, 2vw, 1.375rem);
+    font-weight: 800;
+    color: var(--sara-sapphire-950, #0E1A38);
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .program-card--graduate {
+    border-left: 3px solid var(--sara-jade-600, #0E6B47);
+  }
+
+  .program-icon-box--graduate {
+    background: rgba(14, 107, 71, 0.08);
+    color: var(--sara-jade-700, #0A5236);
+  }
+
+  .program-card--graduate:hover .program-icon-box--graduate {
+    background: rgba(14, 107, 71, 0.16);
+    color: var(--sara-jade-800, #073D28);
+  }
+
+  .program-code--graduate {
+    color: var(--sara-jade-700, #0A5236);
+  }
+
+  .program-link--graduate {
+    color: var(--sara-jade-700, #0A5236);
+  }
+
+  .program-link--graduate:hover {
+    color: var(--sara-jade-900, #052B1C);
   }
 
   .program-info {

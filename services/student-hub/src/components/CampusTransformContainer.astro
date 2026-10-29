@@ -1149,32 +1149,42 @@ const slides: Slide[] = [
   @media screen and (max-width: 900px) {
     fime-campus-stage.transform-container,
     .transform-container {
+      display: block;
       aspect-ratio: auto;
-      min-height: 280px;
+      min-height: 260px;
       border-radius: var(--sara-radius-md, 12px);
+      overflow: hidden;
     }
 
-    fime-campus-stage.transform-container.show-chat,
+    .transform-container .carousel-section {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      min-height: 260px;
+    }
+
+    .transform-container .chat-section {
+      display: none;
+    }
+
     .transform-container.show-chat {
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr;
-      height: min(600px, 80svh);
+      height: auto;
       min-height: 480px;
-      aspect-ratio: auto;
     }
 
     .transform-container.show-chat .carousel-section {
       display: none;
     }
 
-    .transform-container .carousel-section {
-      aspect-ratio: 16 / 10;
-      min-height: 260px;
-    }
-
-    .chat-section {
-      grid-column: 1;
-      grid-row: 1;
+    .transform-container.show-chat .chat-section {
+      display: flex;
+      width: 100%;
+      height: min(600px, 80svh);
+      min-height: 480px;
+      opacity: 1;
+      transform: none;
+      visibility: visible;
+      pointer-events: auto;
       border-left: none;
     }
 
