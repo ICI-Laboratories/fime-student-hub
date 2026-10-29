@@ -79,14 +79,15 @@ services:
     restart: always
     networks:
     - student-hub-network
-  landing:
-    build:
-      context: ./services/landing
-      dockerfile: Dockerfile
-    container_name: fime-student-hub-landing-1
-    restart: always
-    networks:
-    - student-hub-network
+  # Servicio Vanilla JS legacy (descomisionado: unificado en Astro 5 en student-hub)
+  # landing:
+  #   build:
+  #     context: ./services/landing
+  #     dockerfile: Dockerfile
+  #   container_name: fime-student-hub-landing-1
+  #   restart: always
+  #   networks:
+  #   - student-hub-network
   student-hub:
     build:
       context: .
@@ -132,7 +133,6 @@ services:
     - professors-service
     - academic-service
     - reference-service
-    - landing
     - fimebot-backend
     - portal
   fimebot-backend:

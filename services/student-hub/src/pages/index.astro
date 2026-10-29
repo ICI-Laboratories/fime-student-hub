@@ -1,1603 +1,536 @@
 ---
 import InstitutionalLayout from "../layouts/InstitutionalLayout.astro";
-import { cargarCarreras, cargarTodosLosGrupos, cargarGrupoConProfesores, cargarHorarioDeGrupo, cargarExamenesDeGrupo, cargarSyllabusDeCarrera } from "../lib/cargarDatos.js";
+import CampusCarousel from "../components/CampusCarousel.astro";
+import FimeBotChat from "../components/FimeBotChat.astro";
+import QuickAccessGrid from "../components/QuickAccessGrid.astro";
 
-const student = Astro.locals.student;
-const allCareers = await cargarCarreras();
-const fimeCareerIds = [349, 371, 418, 99];
-const careers = allCareers.filter(c => fimeCareerIds.includes(c.id));
-const allGroups = await cargarTodosLosGrupos();
-
-const forceSelect = Astro.url.searchParams.has("select_group");
-const activeGroupSlug = forceSelect ? null : (Astro.url.searchParams.get("group") || Astro.cookies.get("pica_selected_group")?.value || student?.class_group_slug);
-let activeGroup = null;
-let schedules = [];
-let examDates = [];
-let syllabusList = [];
-
-if (activeGroupSlug) {
-  activeGroup = await cargarGrupoConProfesores(activeGroupSlug);
-  if (activeGroup) {
-    schedules = await cargarHorarioDeGrupo(activeGroup.id);
-    examDates = await cargarExamenesDeGrupo(activeGroup.id);
-    syllabusList = await cargarSyllabusDeCarrera(activeGroup.career_id);
-
-    if (schedules && schedules.length > 0) {
-      schedules = schedules.map(s => {
-        const dayClassroom = activeGroup.classroom || (activeGroup.classrooms_by_day ? activeGroup.classrooms_by_day[s.day_of_week] : null);
-        let effectiveRoom = null;
-
-        if (dayClassroom) {
-          if (dayClassroom.includes('/')) {
-            const parts = dayClassroom.split('/').map(p => p.trim());
-            const preRecess = parts[0] || null;
-            const postRecess = parts[1] || null;
-            effectiveRoom = (s.start_time < "15:00:00") ? preRecess : postRecess;
-          } else {
-            effectiveRoom = dayClassroom;
-          }
-        }
-
-        let room = s.classroom_name;
-        if (effectiveRoom) {
-          if (!room || room === "Aulas" || room === "Por asignar") {
-            room = effectiveRoom;
-          } else if (room === "Cómputo y Talleres") {
-            room = effectiveRoom;
-          }
-        }
-
-        return {
-          ...s,
-          classroom_name: room
-        };
-      });
-    }
-  }
+// Compatibilidad hacia atrás: redirigir consultas de grupos directas a /studenthub
+if (Astro.url.searchParams.has("select_group") || Astro.url.searchParams.has("group")) {
+  return Astro.redirect(`/studenthub${Astro.url.search}`);
 }
 
-const timeSlots = [
-  { start: "07:00:00", end: "07:50:00", label: "07:00–07:50" },
-  { start: "07:50:00", end: "08:40:00", label: "07:50–08:40" },
-  { isRecess: true, start: "08:40:00", end: "09:10:00", label: "08:40–09:10", title: "Receso" },
-  { start: "09:10:00", end: "10:00:00", label: "09:10–10:00" },
-  { start: "10:00:00", end: "10:50:00", label: "10:00–10:50" },
-  { start: "10:50:00", end: "11:40:00", label: "10:50–11:40" },
-  { start: "11:40:00", end: "12:30:00", label: "11:40–12:30" },
-  { start: "12:30:00", end: "13:20:00", label: "12:30–13:20" },
-  { start: "13:20:00", end: "14:10:00", label: "13:20–14:10" },
-  { start: "14:10:00", end: "15:00:00", label: "14:10–15:00" },
-  { isRecess: true, start: "15:00:00", end: "15:30:00", label: "15:00–15:30", title: "Receso" },
-  { start: "15:30:00", end: "16:20:00", label: "15:30–16:20" },
-  { start: "16:20:00", end: "17:10:00", label: "16:20–17:10" },
-  { start: "17:10:00", end: "18:00:00", label: "17:10–18:00" },
-  { start: "18:00:00", end: "18:50:00", label: "18:00–18:50" },
-  { start: "18:50:00", end: "19:40:00", label: "18:50–19:40" },
+const academicPrograms = [
+  { name: "Ingeniería en Computación Inteligente", code: "ICI", icon: "💻" },
+  { name: "Ingeniería Mecatrónica", code: "IMEC", icon: "🤖" },
+  { name: "Ingeniería Mecánica Electricista", code: "IME", icon: "⚡" },
+  { name: "Ingeniería en Tecnologías e Internet", code: "ITI", icon: "🌐" },
 ];
-
-let minStartTime = "23:59:59";
-let maxEndTime = "00:00:00";
-if (schedules && schedules.length > 0) {
-  schedules.forEach(s => {
-    if (s.start_time < minStartTime) {
-      minStartTime = s.start_time;
-    }
-    if (s.end_time > maxEndTime) {
-      maxEndTime = s.end_time;
-    }
-  });
-} else {
-  minStartTime = "07:00:00";
-  maxEndTime = "14:10:00";
-}
-
-const visibleTimeSlots = timeSlots.filter(slot => {
-  return slot.start >= minStartTime && slot.start < maxEndTime;
-});
-
-const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
-
-function findScheduleItems(day: string, timeStart: string, timeEnd: string) {
-  return schedules.filter(s => {
-    if (s.day_of_week !== day) return false;
-    return s.start_time < timeEnd && s.end_time > timeStart;
-  });
-}
-
-const gridCells = [];
-visibleTimeSlots.forEach((slot, slotIdx) => {
-  gridCells[slotIdx] = [];
-  daysOfWeek.forEach((day, dayIdx) => {
-    gridCells[slotIdx][dayIdx] = { render: true, rowspan: 1, items: [] };
-  });
-});
-
-function mergeOverlappingItems(items) {
-  const bySubject = {};
-  items.forEach(item => {
-    const key = item.subject_name;
-    if (!bySubject[key]) {
-      bySubject[key] = { ...item };
-    } else {
-      const existing = bySubject[key];
-      if (item.professor_name && (!existing.professor_name || !existing.professor_name.includes(item.professor_name))) {
-        existing.professor_name = existing.professor_name ? existing.professor_name + " / " + item.professor_name : item.professor_name;
-      }
-      if (item.classroom_name && (!existing.classroom_name || !existing.classroom_name.includes(item.classroom_name))) {
-        existing.classroom_name = existing.classroom_name ? existing.classroom_name + " / " + item.classroom_name : item.classroom_name;
-      }
-      existing.is_hti = existing.is_hti || item.is_hti;
-      existing.is_lab = existing.is_lab || item.is_lab;
-    }
-  });
-  return Object.values(bySubject);
-}
-
-daysOfWeek.forEach((day, dayIdx) => {
-  for (let slotIdx = 0; slotIdx < visibleTimeSlots.length; slotIdx++) {
-    const slot = visibleTimeSlots[slotIdx];
-    if (slot.isRecess) continue;
-    if (!gridCells[slotIdx][dayIdx].render) continue;
-
-    const rawItems = findScheduleItems(day, slot.start, slot.end);
-    const mergedItems = mergeOverlappingItems(rawItems);
-    gridCells[slotIdx][dayIdx].items = mergedItems;
-
-    if (mergedItems.length > 0) {
-      let currentSpan = 1;
-      let nextSlotIdx = slotIdx + 1;
-      
-      while (nextSlotIdx < visibleTimeSlots.length) {
-        const nextSlot = visibleTimeSlots[nextSlotIdx];
-        if (nextSlot.isRecess) break;
-        
-        const nextRawItems = findScheduleItems(day, nextSlot.start, nextSlot.end);
-        const nextMerged = mergeOverlappingItems(nextRawItems);
-        
-        if (mergedItems.length === nextMerged.length && mergedItems.length > 0) {
-          let allMatch = true;
-          for (let i = 0; i < mergedItems.length; i++) {
-            if (mergedItems[i].subject_name !== nextMerged[i].subject_name || mergedItems[i].professor_name !== nextMerged[i].professor_name || nextMerged[i].is_hti) {
-              allMatch = false;
-              break;
-            }
-          }
-          if (allMatch) {
-            currentSpan++;
-            gridCells[nextSlotIdx][dayIdx].render = false;
-            mergedItems.forEach((item, idx) => {
-                item.end_time = nextMerged[idx].end_time;
-            });
-            nextSlotIdx++;
-          } else {
-            break;
-          }
-        } else {
-          break;
-        }
-      }
-      gridCells[slotIdx][dayIdx].rowspan = currentSpan;
-    }
-  }
-});
-
-function getSyllabusSlug(subjectName: string): string {
-  const s = syllabusList.find(s =>
-    s.subject_name?.toLowerCase().trim() === subjectName?.toLowerCase().trim()
-  );
-  return s?.slug || "#";
-}
-
-function getSyllabusDesc(subjectName: string): string {
-  const s = syllabusList.find(s =>
-    s.subject_name?.toLowerCase().trim() === subjectName?.toLowerCase().trim()
-  );
-  return s?.program_description || "Sin descripción disponible.";
-}
-
-function getDailySchedule(day: string) {
-  const dayItems = schedules
-    .filter(s => s.day_of_week === day)
-    .sort((a, b) => a.start_time.localeCompare(b.start_time))
-    .map(item => ({
-      ...item,
-      isHti: item.is_hti || item.subject_name?.toUpperCase().includes('HTI')
-    }));
-
-  const byTimeAndSubject = {};
-  dayItems.forEach(item => {
-    const key = `${item.start_time}-${item.end_time}-${item.subject_name}`;
-    if (!byTimeAndSubject[key]) {
-      byTimeAndSubject[key] = { ...item };
-    } else {
-      const existing = byTimeAndSubject[key];
-      if (item.professor_name && (!existing.professor_name || !existing.professor_name.includes(item.professor_name))) {
-        existing.professor_name = existing.professor_name ? existing.professor_name + " / " + item.professor_name : item.professor_name;
-      }
-      if (item.classroom_name && (!existing.classroom_name || !existing.classroom_name.includes(item.classroom_name))) {
-        existing.classroom_name = existing.classroom_name ? existing.classroom_name + " / " + item.classroom_name : item.classroom_name;
-      }
-    }
-  });
-  return Object.values(byTimeAndSubject).sort((a, b) => a.start_time.localeCompare(b.start_time));
-}
 ---
 
-{!activeGroup ? (
-  <InstitutionalLayout title="Selección de Grupo">
-    <div style="max-width: 800px; margin: 80px auto; padding: 0 24px; min-height: 400px;">
-      
-      <!-- Paso 1: Selecciona tu Carrera -->
-      <section id="step-career" class="wizard-step" aria-labelledby="career-heading">
-        <span id="career-progress" class="overline overline--primary">Paso 1 de 3</span>
-        <h1 id="career-heading" tabindex="-1" aria-describedby="career-progress" style="font-size: 3rem; font-weight: 900; letter-spacing: -0.04em; color: var(--color-ink); margin-top: 8px; line-height: 1.1; margin-bottom: 12px;">
-          Selecciona tu Carrera
-        </h1>
-        <p style="font-size: 1rem; color: var(--color-ink-2); line-height: 1.5; margin-bottom: 36px;">
-          Elige tu carrera académica para comenzar a visualizar tu horario.
-        </p>
+<InstitutionalLayout
+  title="Facultad de Ingeniería Mecánica y Eléctrica"
+  description="Portal institucional FIME — Universidad de Colima. Conoce nuestras ingenierías, consulta horarios en StudentHUB, ubica aulas en el campus Coquimatlán y orienta tus dudas con FimeBot."
+  fromLanding={true}
+>
+  <div class="landing-page">
+    <!-- Hero Principal -->
+    <header class="landing-hero">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>FACULTAD DE INGENIERÍA MECÁNICA Y ELÉCTRICA</span>
+      </div>
+      <h1 class="hero-title">Conoce la FIME y encuentra tu camino</h1>
+      <p class="hero-description">
+        Explora las carreras de ingeniería, consulta horarios de clase y espacios en el campus Coquimatlán, y orienta tus dudas con FimeBot sobre admisión, trámites y servicios de la Universidad de Colima.
+      </p>
 
-        {careers.length === 0 && <p>No hay carreras disponibles en este momento. <a href="/studenthub?select_group=true" class="link">Volver a cargar</a></p>}
-        <div class="selection-grid">
-          {careers.map(career => (
-            <button 
-              class="career-btn selection-card-btn"
-              type="button"
-              data-id={career.id}
-              data-name={career.name}
+      <!-- Botones de Acción Rápida (Óptimos para Móvil y Desktop) -->
+      <nav class="hero-actions" aria-label="Acciones prioritarias">
+        <a href="/studenthub" class="action-btn action-btn--primary">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Ver Horarios de Clase</span>
+        </a>
+        <a href="#fimebot-chat" class="action-btn action-btn--secondary" id="hero-chat-trigger">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>Preguntar a FimeBot</span>
+        </a>
+        <a href="/mapa?from=landing" class="action-btn action-btn--ghost">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+          <span>Mapa Campus</span>
+        </a>
+      </nav>
+    </header>
+
+    <!-- Split Principal: Galería de Campus + FimeBot Chat -->
+    <section class="main-split-section" aria-label="Exploración interactiva de la facultad">
+      <div class="split-column split-column--carousel">
+        <CampusCarousel />
+      </div>
+
+      <div class="split-column split-column--chat">
+        <FimeBotChat />
+      </div>
+    </section>
+
+    <!-- Accesos Rápidos a StudentHUB -->
+    <QuickAccessGrid />
+
+    <!-- Oferta Académica FIME -->
+    <section class="programs-section" aria-labelledby="programs-title">
+      <div class="programs-header">
+        <div class="programs-badge">
+          <span class="programs-badge-dot"></span>
+          <span>PROGRAMAS DE LICENCIATURA</span>
+        </div>
+        <h2 id="programs-title" class="programs-title">Ingenierías de la FIME</h2>
+        <p class="programs-lead">Formamos profesionales de excelencia técnica con visión humanista e innovadora en el campus Coquimatlán.</p>
+      </div>
+
+      <div class="programs-grid">
+        {academicPrograms.map((program) => (
+          <div class="program-card">
+            <span class="program-icon" aria-hidden="true">{program.icon}</span>
+            <div class="program-info">
+              <span class="program-code">{program.code}</span>
+              <h3 class="program-name">{program.name}</h3>
+            </div>
+            <a
+              href={`https://www.ucol.mx/oferta-educativa/licenciatura`}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="program-link"
+              aria-label={`Ver plan de estudios de ${program.name}`}
             >
-              {career.name}
-            </button>
-          ))}
-        </div>
-      </section>
+              Plan de estudios
+              <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z" clip-rule="evenodd" />
+              </svg>
+            </a>
+          </div>
+        ))}
+      </div>
+    </section>
 
-      <!-- Paso 2: Selecciona tu Semestre -->
-      <section id="step-semester" class="wizard-step" aria-labelledby="semester-heading" hidden>
-        <span id="semester-progress" class="overline overline--primary">Paso 2 de 3</span>
-        <h1 id="semester-heading" tabindex="-1" aria-describedby="semester-progress selected-career-label" style="font-size: 3rem; font-weight: 900; letter-spacing: -0.04em; color: var(--color-ink); margin-top: 8px; line-height: 1.1; margin-bottom: 8px;">
-          Selecciona tu Semestre
-        </h1>
-        <p id="selected-career-label" style="font-size: 1.125rem; font-weight: 700; color: var(--sara-sapphire-700); margin-bottom: 36px;"></p>
-
-        <div id="semesters-grid" class="selection-grid" style="margin-bottom: 40px;"></div>
-        
-        <button 
-          id="btn-back-to-career"
-          type="button"
-          aria-label="Volver a elegir carrera"
-          class="btn btn--ghost"
-        >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          Anterior
-        </button>
-      </section>
-
-      <!-- Paso 3: Selecciona tu Grupo -->
-      <section id="step-group" class="wizard-step" aria-labelledby="group-heading" hidden>
-        <span id="group-progress" class="overline overline--primary">Paso 3 de 3</span>
-        <h1 id="group-heading" tabindex="-1" aria-describedby="group-progress selected-career-sem-label" style="font-size: 3rem; font-weight: 900; letter-spacing: -0.04em; color: var(--color-ink); margin-top: 8px; line-height: 1.1; margin-bottom: 8px;">
-          Selecciona tu Grupo
-        </h1>
-        <p id="selected-career-sem-label" style="font-size: 1.125rem; font-weight: 700; color: var(--sara-sapphire-700); margin-bottom: 36px;"></p>
-
-        <div id="groups-grid" class="selection-grid" style="margin-bottom: 40px;"></div>
-        
-        <button 
-          id="btn-back-to-semester"
-          type="button"
-          aria-label="Volver a elegir semestre"
-          class="btn btn--ghost"
-        >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          Anterior
-        </button>
-      </section>
-
-      <noscript><p>Activa JavaScript para elegir tu grupo y consultar el horario. El directorio de profesores y las materias siguen disponibles desde el menú.</p></noscript>
-    </div>
-
-    <script is:inline define:vars={{ allGroups }}>
-      (() => {
-        const steps = [...document.querySelectorAll('.wizard-step')];
-        const semestersGrid = document.getElementById('semesters-grid');
-        const groupsGrid = document.getElementById('groups-grid');
-        const careerLabel = document.getElementById('selected-career-label');
-        const groupLabel = document.getElementById('selected-career-sem-label');
-        let careerTrigger = null;
-        let semesterTrigger = null;
-
-        function showStep(id, focusTarget) {
-          steps.forEach(step => { step.hidden = step.id !== id; });
-          const target = focusTarget || document.querySelector(`#${id} h1`);
-          target?.focus();
-        }
-
-        function showEmpty(container, message) {
-          const note = document.createElement('p');
-          note.textContent = message;
-          container.append(note);
-        }
-
-        document.querySelectorAll('.career-btn').forEach(button => {
-          button.addEventListener('click', () => {
-            careerTrigger = button;
-            const careerId = Number(button.dataset.id);
-            const careerName = button.dataset.name || '';
-            const careerGroups = allGroups.filter(group => group.career_id === careerId);
-            const semesters = [...new Set(careerGroups.map(group => group.semester))].sort((a, b) => a - b);
-            careerLabel.textContent = careerName;
-            semestersGrid.replaceChildren();
-
-            semesters.forEach(semester => {
-              const semesterButton = document.createElement('button');
-              semesterButton.type = 'button';
-              semesterButton.className = 'sem-btn selection-card-btn';
-              semesterButton.textContent = `${semester}° Semestre`;
-              semesterButton.addEventListener('click', () => {
-                semesterTrigger = semesterButton;
-                groupLabel.textContent = `${careerName} — Semestre ${semester}°`;
-                groupsGrid.replaceChildren();
-                const groups = careerGroups.filter(group => group.semester === semester);
-
-                groups.forEach(group => {
-                  const groupButton = document.createElement('button');
-                  groupButton.type = 'button';
-                  groupButton.className = 'grp-btn selection-card-btn';
-                  groupButton.textContent = group.name;
-                  groupButton.addEventListener('click', () => {
-                    const secure = location.protocol === 'https:' ? '; Secure' : '';
-                    document.cookie = `pica_selected_group=${encodeURIComponent(group.slug)}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
-                    // Keep the selected group in the URL so the timetable is shareable
-                    // and still works when the browser does not store preferences.
-                    const destination = new URL('/studenthub', location.origin);
-                    destination.searchParams.set('group', group.slug);
-                    location.assign(destination.href);
-                  });
-                  groupsGrid.append(groupButton);
-                });
-                if (!groups.length) showEmpty(groupsGrid, 'Todavía no hay grupos disponibles para este semestre. Puedes elegir otro semestre.');
-                showStep('step-group');
-              });
-              semestersGrid.append(semesterButton);
-            });
-            if (!semesters.length) showEmpty(semestersGrid, 'Todavía no hay horarios disponibles para esta carrera. Puedes elegir otra carrera.');
-            showStep('step-semester');
-          });
-        });
-
-        document.getElementById('btn-back-to-career')?.addEventListener('click', () => {
-          showStep('step-career', careerTrigger);
-        });
-        document.getElementById('btn-back-to-semester')?.addEventListener('click', () => {
-          showStep('step-semester', semesterTrigger);
-        });
-      })();
-    </script>
-  </InstitutionalLayout>
-) : (
-<InstitutionalLayout title="Horario del Estudiante">
-
-  <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px;">
-    <div class="page-header__title">
-      <span class="overline overline--primary">Panel Principal &mdash; Horario</span>
-      <h1 class="page-title" style="margin-bottom: 8px;">
-        Horario del<br />Estudiante
-      </h1>
-      {activeGroup && (
-        <p class="page-subtitle">
-          {activeGroup.name} &mdash; {activeGroup.careerName} &mdash; Turno {activeGroup.shift}
-          {activeGroup.tutor_name && (
-            <> &mdash; Tutor: {activeGroup.tutor_name}</>
-          )}
-          <a href="/studenthub?select_group=true" class="link" style="margin-left: 12px; font-weight: 700; color: var(--sara-sapphire-600); display: inline-flex; align-items: center; gap: 4px;">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/></svg>
-            Cambiar Grupo
-          </a>
-        </p>
-      )}
-    </div>
-    
-
-  </div>
-
-
-
-
-  <hr class="rule" style="margin-bottom: 40px;" />
-
-  <!-- ═══════════════════════════════════════════════════
-       CONTENIDO PRINCIPAL
-       Grid asimétrico: horario (amplio) + sidebar (estrecho)
-       ═══════════════════════════════════════════════════ -->
-  <div class="content-grid">
-
-    <!-- ─────────────────────────────────────
-         SIDEBAR INFORMATIVO
-         Sin tarjetas, sin bordes contenedores.
-         Secciones separadas por regla + whitespace.
-         ───────────────────────────────────── -->
-    <aside class="sidebar" aria-label="Información del grupo">
-
-      <!-- Información del grupo -->
-      {activeGroup && (
-        <div class="sidebar-section">
-          <span class="overline">Tu grupo</span>
-          <div class="sidebar-data">
-            <div class="data-row">
-              <span class="field-label">Grupo</span>
-              <span class="field-value">{activeGroup.name}</span>
-            </div>
-            <div class="data-row">
-              <span class="field-label">Carrera</span>
-              <span class="field-value">{activeGroup.careerName}</span>
-            </div>
-            <div class="data-row">
-              <span class="field-label">Turno</span>
-              <span class="field-value">{activeGroup.shift}</span>
-            </div>
-            {activeGroup.semester && (
-              <div class="data-row">
-                <span class="field-label">Semestre</span>
-                <span class="field-value">{activeGroup.semester}°</span>
-              </div>
-            )}
-            {activeGroup.classroom && (
-              <div class="data-row">
-                <span class="field-label">Aula</span>
-                <span class="field-value" style="font-family: var(--font-mono); font-weight: 700;">{activeGroup.classroom}</span>
-              </div>
-            )}
-            {!activeGroup.classroom && activeGroup.classrooms_by_day && (() => {
-              const diasOrden = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-              const cbd = activeGroup.classrooms_by_day;
-              const entradasOrdenadas = diasOrden.filter(d => cbd[d]).map(d => [d, cbd[d]]);
-              return (
-                <div class="data-row" style="align-items: flex-start;">
-                  <span class="field-label" style="padding-top: 2px;">Aulas</span>
-                  <div style="display: flex; flex-direction: column; gap: 2px;">
-                    {entradasOrdenadas.map(([dia, aula]) => (
-                      <span style="font-size: 0.75rem;">
-                        <span style="color: var(--color-ink-3); font-family: var(--font-mono); font-size: 0.65rem;">{dia.substring(0,2).toUpperCase()}</span>
-                        {' '}
-                        <span style="font-family: var(--font-mono); font-weight: 700; color: var(--color-ink);">{aula}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
+    <!-- Tarjeta de Ubicación e Información de Contacto -->
+    <section class="campus-contact-card" aria-label="Información de la sede universitaria">
+      <div class="contact-info">
+        <div class="contact-brand">
+          <img src="/vectors/logos/fime_escudo_ucol.svg" alt="Escudo Universidad de Colima" width="28" height="28" />
+          <div>
+            <h3 class="contact-heading">Campus Coquimatlán · Universidad de Colima</h3>
+            <p class="contact-sub">Km. 9 Carretera Colima - Coquimatlán, C.P. 28400. Coquimatlán, Colima, México.</p>
           </div>
         </div>
-      )}
-
-      <!-- Tutor del grupo -->
-      {activeGroup?.tutor_name && (
-        <>
-          <hr class="rule" />
-          <div class="sidebar-section">
-            <span class="overline">Tutor</span>
-            <div class="sidebar-data">
-              <div class="data-row">
-                <span class="field-label">Docente</span>
-                <a href={`/profesores/${activeGroup.tutor_slug}`} class="field-value link">
-                  {activeGroup.tutor_name}
-                </a>
-              </div>
-              {activeGroup.tutor_email && (
-                <div class="data-row">
-                  <span class="field-label">Email</span>
-                  <a href={`mailto:${activeGroup.tutor_email}`} class="field-value link" style="font-size: 0.75rem; font-weight: 500;">
-                    {activeGroup.tutor_email}
-                  </a>
-                </div>
-              )}
-              {activeGroup.tutor_office && (
-                <div class="data-row">
-                  <span class="field-label">Cubículo</span>
-                  <span class="field-value">{activeGroup.tutor_office}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
-
-
-
-    </aside>
-
-    <!-- ─────────────────────────────────────
-         COLUMNA PRINCIPAL: TABLA DE HORARIO
-         Swiss table: solo reglas horizontales.
-         Sin bordes de celda. Sin fondos alternados.
-         La tipografía diferencia, no el color.
-         ───────────────────────────────────── -->
-    <section aria-label="Horario semanal" class="schedule-section">
-      <div class="section-head">
-        <span class="overline">Horario semanal</span>
       </div>
-
-      <!-- ── VISTA TABLA (Desktop) ── -->
-      <div class="schedule-desktop" role="region" aria-label="Tabla de horario, desplazable horizontalmente" tabindex="0">
-        <table class="schedule-table" aria-label={`Horario semanal del grupo ${activeGroup.name}`}>
-          <thead>
-            <tr>
-              <th scope="col" class="schedule-table__time-header">Hora</th>
-              {daysOfWeek.map(day => (
-                <th scope="col" class="schedule-table__day-header">{day}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {visibleTimeSlots.map((slot, slotIdx) => {
-              if (slot.isRecess) {
-                return (
-                  <tr class="schedule-table__row recess-row" style="background: rgba(var(--color-primary-rgb), 0.04); font-weight: bold; border-top: 1px solid var(--color-rule-strong); border-bottom: 1px solid var(--color-rule-strong);">
-                    <th scope="row" class="schedule-table__time-cell" style="height: 38px; padding: 8px 16px 8px 0; vertical-align: middle;">
-                      <span class="time-label" style="padding-top: 0;">{slot.label}</span>
-                    </th>
-                    <td colspan="5" class="schedule-table__cell recess-cell" style="height: 38px; text-align: center; color: var(--color-primary); letter-spacing: 0.15em; text-transform: uppercase; font-size: 0.72rem; padding: 0; font-family: var(--font-sans); font-weight: 800; background: var(--color-surface-2); vertical-align: middle;">
-                      Receso
-                    </td>
-                  </tr>
-                );
-              }
-
-              return (
-                <tr class="schedule-table__row">
-                  <th scope="row" class="schedule-table__time-cell">
-                    <span class="time-label">{slot.label}</span>
-                  </th>
-                  {daysOfWeek.map((day, dayIdx) => {
-                    const cell = gridCells[slotIdx][dayIdx];
-                    if (!cell.render) return null;
-
-                    return (
-                      <td class="schedule-table__cell" rowspan={cell.rowspan} style={cell.rowspan > 1 ? "vertical-align: middle;" : ""}>
-                         <div style={`display: flex; flex-direction: column; gap: 4px; height: 100%; ${cell.rowspan > 1 ? 'justify-content: center;' : ''}`}>
-                          {cell.items.map(item => {
-                          const syllabusSlug = item ? getSyllabusSlug(item.subject_name) : "#";
-                          const syllabusDesc = item ? getSyllabusDesc(item.subject_name) : "";
-                          const isHtiEntry = item.is_hti || (item.subject_name && item.subject_name.toUpperCase().includes('HTI'));
-                          return (
-                            <button
-                              class={`class-entry class-card-btn ${isHtiEntry ? 'independent-work' : ''}`}
-                              style={cell.rowspan > 1 ? "min-height: 95px; display: flex; flex-direction: column; justify-content: center;" : ""}
-                              type="button"
-                        aria-haspopup="dialog"
-                        aria-controls="class-modal"
-                        aria-label={`Ver detalle de ${item.subject_name}${isHtiEntry ? ' (Horas de Trabajo Independiente)' : ''}, ${day}, ${item.start_time.substring(0, 5)} a ${item.end_time.substring(0, 5)}${item.professor_name ? `, ${item.professor_name}` : ''}${item.classroom_name ? `, aula ${item.classroom_name}` : ''}`}
-                              data-subject={item.subject_name}
-                              data-professor={item.professor_name}
-                              data-professor-email={item.professor_email}
-                              data-professor-slug={item.professor_slug}
-                              data-professor-phone={item.professor_phone || ""}
-                              data-professor-office={item.professor_office || ""}
-                              data-professor-hours={item.professor_office_hours || ""}
-                              data-professor-image={item.professor_image || ""}
-                              data-classroom={item.classroom_name || ""}
-                              data-is-lab={item.is_lab ? "Sí" : "No"}
-                              data-syllabus-slug={syllabusSlug}
-                              data-description={syllabusDesc}
-                              data-exams={JSON.stringify(examDates.filter(e => e.subject_name === item.subject_name))}
-                            >
-                              <span class="class-entry__subject">{item.subject_name}</span>
-                              <span class="class-entry__time" style="font-size: 0.65rem; opacity: 0.8; display: block; font-family: monospace;">{item.start_time.substring(0, 5)} - {item.end_time.substring(0, 5)}</span>
-                              {item.professor_name && (
-                                <span class="class-entry__professor">{item.professor_name}</span>
-                              )}
-                              {item.classroom_name && (
-                                <span class="class-entry__room">
-                                  {item.classroom_name}
-                                  {item.is_lab && <span class="class-entry__lab-tag">LAB</span>}
-                                </span>
-                              )}
-                              {isHtiEntry && (
-                                <span class="class-entry__hti-tag">HTI</span>
-                              )}
-                            </button>
-                          );
-                        })}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- ── VISTA LISTA (Móvil) ── -->
-      <div class="schedule-mobile" aria-label="Horario semanal por día">
-        {daysOfWeek.map(day => {
-          const rawDayItems = getDailySchedule(day);
-          
-          if (rawDayItems.length > 0) {
-            let dayStart = "23:59:59";
-            let dayEnd = "00:00:00";
-            rawDayItems.forEach(i => {
-              if (dayStart > i.start_time) dayStart = i.start_time;
-              if (i.end_time > dayEnd) dayEnd = i.end_time;
-            });
-
-            timeSlots.filter(s => s.isRecess).forEach(r => {
-              if (r.start >= dayStart && dayEnd >= r.end) {
-                rawDayItems.push({
-                  isRecessCard: true,
-                  start_time: r.start,
-                  end_time: r.end,
-                  subject_name: r.title || "Receso"
-                });
-              }
-            });
-            rawDayItems.sort((a, b) => a.start_time.localeCompare(b.start_time));
-          }
-
-          const dayItems = [];
-          for (let i = 0; rawDayItems.length > i; i++) {
-            const currentItem = { ...rawDayItems[i], span: 1 };
-            while (
-              rawDayItems.length > i + 1 &&
-              rawDayItems[i + 1].subject_name === currentItem.subject_name &&
-              rawDayItems[i + 1].professor_name === currentItem.professor_name &&
-              rawDayItems[i + 1].start_time === currentItem.end_time
-            ) {
-              currentItem.end_time = rawDayItems[i + 1].end_time;
-              currentItem.span++;
-              i++;
-            }
-            dayItems.push(currentItem);
-          }
-          const classCount = dayItems.filter(item => !item.isRecessCard).length;
-          return (
-            <div class="mobile-day">
-              <div class="mobile-day__header">
-                <h2 class="mobile-day__name">{day}</h2>
-                <span class="mobile-day__count">{`${classCount} ${classCount === 1 ? 'clase' : 'clases'}`}</span>
-              </div>
-              {dayItems.length === 0 ? (
-                <div class="mobile-day__empty">
-                  <span>Sin clases programadas</span>
-                </div>
-              ) : (
-                <div class="mobile-day__list">
-                  {dayItems.map(item => {
-                    if (item.isRecessCard) {
-                      return (
-                        <div
-                          class="mobile-class"
-                          style="min-height: 48px; background: var(--color-muted); justify-content: center; align-items: center; border-left: 3px solid var(--color-primary); border-bottom: 1px solid var(--color-rule-strong); cursor: default;"
-                        >
-                          <span style="font-family: var(--font-mono); font-size: 0.75rem; font-weight: 800; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.1em;">
-                            {item.start_time.substring(0, 5)} – {item.end_time.substring(0, 5)} &nbsp;&nbsp; Receso
-                          </span>
-                        </div>
-                      );
-                    }
-
-                    const syllabusSlug = getSyllabusSlug(item.subject_name);
-                    const syllabusDesc = getSyllabusDesc(item.subject_name);
-                    const isHtiEntry = item.isHti || item.subject_name?.toUpperCase().includes('HTI');
-                    return (
-                      <button
-                        class={`mobile-class class-card-btn ${isHtiEntry ? 'independent-work' : ''}`}
-                        style={`min-height: ${item.span * 72}px; padding-top: ${item.span * 12}px; padding-bottom: ${item.span * 12}px;`}
-                        type="button"
-                        aria-haspopup="dialog"
-                        aria-controls="class-modal"
-                        aria-label={`Ver detalle de ${item.subject_name}${isHtiEntry ? ' (Horas de Trabajo Independiente)' : ''}, ${day}, ${item.start_time.substring(0, 5)} a ${item.end_time.substring(0, 5)}${item.professor_name ? `, ${item.professor_name}` : ''}${item.classroom_name ? `, aula ${item.classroom_name}` : ''}`}
-                        data-subject={item.subject_name}
-                        data-professor={item.professor_name}
-                        data-professor-email={item.professor_email}
-                        data-professor-slug={item.professor_slug}
-                        data-professor-phone={item.professor_phone || ""}
-                        data-professor-office={item.professor_office || ""}
-                        data-professor-hours={item.professor_office_hours || ""}
-                        data-professor-image={item.professor_image || ""}
-                        data-classroom={item.classroom_name || ""}
-                        data-is-lab={item.is_lab ? "Sí" : "No"}
-                        data-syllabus-slug={syllabusSlug}
-                        data-description={syllabusDesc}
-                        data-exams={JSON.stringify(examDates.filter(e => e.subject_name === item.subject_name))}
-                      >
-                        <span class="mobile-class__time">{item.start_time.substring(0, 5)} – {item.end_time.substring(0, 5)}</span>
-                        <div class="mobile-class__info">
-                          <span class="mobile-class__subject">{item.subject_name}</span>
-                          {item.professor_name && (
-                            <span class="mobile-class__professor">{item.professor_name}</span>
-                          )}
-                          <span class="mobile-class__meta">
-                            {item.classroom_name || ''}
-                            {item.is_lab && <span class="class-entry__lab-tag">LAB</span>}
-                            {isHtiEntry && <span class="class-entry__hti-tag">HTI</span>}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div class="contact-actions">
+        <a href="tel:+523123161066" class="contact-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          (312) 316-1066
+        </a>
+        <a href="https://www.ucol.mx" target="_blank" rel="noopener noreferrer" class="contact-btn contact-btn--subtle">
+          Portal UCOL
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z" clip-rule="evenodd" />
+          </svg>
+        </a>
       </div>
     </section>
   </div>
+</InstitutionalLayout>
 
-  <!-- ═══════════════════════════════════════════════════
-       MODAL DE CLASE
-       Swiss: sin decoración. Solo información organizada
-       con tipografía y espaciado. Una línea de división.
-       ═══════════════════════════════════════════════════ -->
-  <dialog
-    id="class-modal"
-    aria-labelledby="modal-subject-name"
-    style="
-      margin: auto;
-      padding: 0;
-      border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
-      border-radius: var(--sara-radius-lg, 16px);
-      box-shadow: var(--sara-shadow-glass-lg);
-      width: min(680px, calc(100% - 32px));
-      max-height: 90dvh;
-      background: var(--color-surface);
-      color: var(--color-ink);
-      overflow: hidden;
-    "
-  >
-    <div
-      id="modal-panel"
-      style="
-        background: var(--color-surface);
-        width: 100%;
-        max-width: 680px;
-        max-height: 90vh;
-        overflow-y: auto;
-        position: relative;
-      "
-    >
-      <!-- Banda refractiva del prisma en el modal -->
-      <div style="height: 4px; background: linear-gradient(90deg, #1A367A 0%, #159AB3 35%, #0E6B47 65%, #E65642 100%);"></div>
-
-      <!-- Header del modal -->
-      <div style="
-        padding: 24px 28px 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-      ">
-        <div>
-          <span class="overline overline--secondary">Detalle de clase</span>
-          <h2
-            id="modal-subject-name"
-            style="
-              font-size: 1.5rem;
-              font-weight: 800;
-              letter-spacing: -0.03em;
-              color: var(--color-ink);
-              margin-top: 4px;
-              line-height: 1.15;
-            "
-          ></h2>
-          <a
-            id="modal-professor-link"
-            href="#"
-            class="link"
-            style="
-              font-size: 0.8125rem;
-              font-weight: 500;
-              margin-top: 4px;
-              display: inline-block;
-            "
-          ></a>
-        </div>
-        <button
-          id="btn-close-modal"
-          type="button"
-          autofocus
-          aria-label="Cerrar detalle"
-          style="
-            background: var(--sara-sapphire-50);
-            border: 1px solid var(--sara-border-glass);
-            border-radius: var(--sara-radius-pill);
-            color: var(--sara-text-secondary);
-            cursor: pointer;
-            padding: 8px;
-            min-width: 44px;
-            min-height: 44px;
-            display: grid;
-            place-items: center;
-            flex-shrink: 0;
-            transition: all 150ms ease;
-          "
-        >
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <hr class="rule" />
-
-      <!-- Cuerpo del modal -->
-      <div class="modal-body">
-
-        <!-- Columna izquierda: descripción y exámenes -->
-        <div class="modal-col">
-          <div class="modal-field">
-            <span class="field-label">Descripción de la materia</span>
-            <p
-              id="modal-subject-desc"
-              style="
-                font-size: 0.8125rem;
-                color: var(--color-ink-2);
-                line-height: 1.6;
-                margin-top: 4px;
-              "
-            ></p>
-          </div>
-
-          <hr class="rule" style="margin: 16px 0;" />
-
-          <div class="modal-field">
-            <span class="field-label">Evaluaciones programadas</span>
-            <div id="modal-exams-container" style="margin-top: 8px;"></div>
-          </div>
-
-          <div style="margin-top: 20px;">
-            <a
-              id="modal-syllabus-btn"
-              href="#"
-              class="btn btn--primary"
-              style="display: none; text-decoration: none; width: 100%;"
-            >Ver programa completo</a>
-          </div>
-        </div>
-
-        <!-- Divisor vertical -->
-        <div class="modal-divider"></div>
-
-        <!-- Columna derecha: aula y docente -->
-        <div class="modal-col">
-          <div class="modal-field">
-            <span class="field-label">Aula / Espacio</span>
-            <div style="
-              margin-top: 6px;
-              display: flex;
-              align-items: baseline;
-              justify-content: space-between;
-              gap: 8px;
-            ">
-              <span
-                id="modal-classroom"
-                style="
-                  font-family: var(--font-mono);
-                  font-size: 1.25rem;
-                  font-weight: 700;
-                  color: var(--color-ink);
-                "
-              ></span>
-              <span id="modal-lab-type" style="font-size: 0.75rem; color: var(--color-ink-3);"></span>
-            </div>
-            <a
-              id="modal-map-link"
-              href="#"
-              class="link"
-              style="font-size: 0.75rem; margin-top: 4px; display: inline-block;"
-            >Ver en mapa</a>
-          </div>
-
-          <hr class="rule" style="margin: 16px 0;" />
-
-          <div class="modal-field">
-            <span class="field-label">Docente responsable</span>
-            <div style="display: flex; gap: 16px; margin-top: 8px; align-items: flex-start;">
-              <!-- Foto del docente -->
-              <div style="width: 64px; height: 64px; border: 1px solid var(--color-rule-strong); overflow: hidden; flex-shrink: 0;">
-                <img id="modal-prof-img" alt="Foto del docente" style="width: 100%; height: 100%; object-fit: cover; display: none;" />
-                <div id="modal-prof-img-placeholder" style="width: 100%; height: 100%; background: var(--sara-sapphire-50); display: flex; align-items: center; justify-content: center; color: var(--sara-sapphire-600);">
-                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-                </div>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 6px; flex: 1;">
-                <div class="data-row">
-                  <span class="field-label">Email</span>
-                  <span id="modal-prof-email" style="font-size: 0.8125rem; color: var(--color-ink-2);"></span>
-                </div>
-                <div class="data-row">
-                  <span class="field-label">Teléfono</span>
-                  <span id="modal-prof-phone" style="font-size: 0.8125rem; color: var(--color-ink-2);"></span>
-                </div>
-                <div class="data-row">
-                  <span class="field-label">Cubículo</span>
-                  <span id="modal-prof-office" style="font-size: 0.8125rem; color: var(--color-ink-2);"></span>
-                </div>
-                <div class="data-row">
-                  <span class="field-label">Horario de atención</span>
-                  <span id="modal-prof-hours" style="font-size: 0.8125rem; color: var(--color-ink-2);"></span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </dialog>
-
-  <script type="module">
-    // Native dialog contains keyboard focus and makes the background inert.
-    const modal    = document.getElementById("class-modal");
-    const btnClose = document.getElementById("btn-close-modal");
-    let modalTrigger = null;
-    let previousOverflow = "";
-
-    const mSubject   = document.getElementById("modal-subject-name");
-    const mProfLink  = document.getElementById("modal-professor-link");
-    const mDesc      = document.getElementById("modal-subject-desc");
-    const mClassroom = document.getElementById("modal-classroom");
-    const mLabType   = document.getElementById("modal-lab-type");
-    const mEmail     = document.getElementById("modal-prof-email");
-    const mPhone     = document.getElementById("modal-prof-phone");
-    const mOffice    = document.getElementById("modal-prof-office");
-    const mHours     = document.getElementById("modal-prof-hours");
-    const mImg       = document.getElementById("modal-prof-img");
-    const mImgPl     = document.getElementById("modal-prof-img-placeholder");
-    const mSyllabus  = document.getElementById("modal-syllabus-btn");
-    const mExams     = document.getElementById("modal-exams-container");
-    const mMapLink   = document.getElementById("modal-map-link");
-
-    document.querySelectorAll(".class-card-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const subject    = btn.getAttribute("data-subject") || "";
-        const professor  = btn.getAttribute("data-professor") || "";
-        const profEmail  = btn.getAttribute("data-professor-email") || "";
-        const profSlug   = btn.getAttribute("data-professor-slug") || "";
-        const profPhone  = btn.getAttribute("data-professor-phone") || "";
-        const profOffice = btn.getAttribute("data-professor-office") || "";
-        const profHours  = btn.getAttribute("data-professor-hours") || "";
-        const profImage  = btn.getAttribute("data-professor-image") || "";
-        const classroom  = btn.getAttribute("data-classroom") || "";
-        const isLab      = btn.getAttribute("data-is-lab") === "Sí";
-        const sylSlug    = btn.getAttribute("data-syllabus-slug") || "";
-        const desc       = btn.getAttribute("data-description") || "Sin descripción disponible.";
-        const exams      = JSON.parse(btn.getAttribute("data-exams") || "[]");
-
-        if (mSubject)   mSubject.textContent   = subject;
-        if (mProfLink) {
-          mProfLink.textContent = professor || "Docente por asignar";
-          if (profSlug) mProfLink.href = `/profesores/${encodeURIComponent(profSlug)}`;
-          else mProfLink.removeAttribute("href");
+<script>
+  // Enlace suave hacia el asistente en móvil o desktop
+  const chatTrigger = document.getElementById("hero-chat-trigger");
+  if (chatTrigger) {
+    chatTrigger.addEventListener("click", (e) => {
+      const openBtn = document.getElementById("open-chat-card-btn");
+      if (openBtn && window.getComputedStyle(openBtn).display !== "none") {
+        openBtn.click();
+      }
+      const target = document.getElementById("fimebot-chat");
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        const textarea = document.getElementById("fimebot-textarea") as HTMLTextAreaElement | null;
+        if (textarea) {
+          setTimeout(() => textarea.focus(), 300);
         }
-        if (mDesc)      mDesc.textContent      = desc;
-        if (mClassroom) mClassroom.textContent  = classroom;
-        if (mLabType)   mLabType.textContent    = isLab ? "Laboratorio" : "Aula teórica";
-        if (mEmail)     mEmail.textContent      = profEmail || "—";
-        if (mPhone)     mPhone.textContent      = profPhone || "—";
-        if (mOffice)    mOffice.textContent     = profOffice || "—";
-        if (mHours)     mHours.textContent      = profHours || "—";
-        if (mMapLink) {
-          mMapLink.href = `/mapa?highlight=${encodeURIComponent(classroom)}`;
-          mMapLink.style.display = classroom ? "inline-block" : "none";
-        }
-        
-        if (mImg && mImgPl) {
-          if (profImage) {
-            mImg.src = profImage;
-            mImg.alt = `Fotografía de ${professor}`;
-            mImg.style.display = "block";
-            mImgPl.style.display = "none";
-          } else {
-            mImg.style.display = "none";
-            mImgPl.style.display = "flex";
-          }
-        }
-
-        if (mSyllabus) {
-          if (sylSlug && sylSlug !== "#") {
-            mSyllabus.href = `/materias/${encodeURIComponent(sylSlug)}`;
-            mSyllabus.style.display = "flex";
-          } else {
-            mSyllabus.style.display = "none";
-          }
-        }
-
-        if (mExams) {
-          mExams.replaceChildren();
-          if (Array.isArray(exams) && exams.length > 0) {
-            exams.forEach(exam => {
-              const date = new Date(exam.exam_date);
-              const dateLabel = Number.isNaN(date.getTime()) ? "Fecha por confirmar" : date.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
-              const row = document.createElement("div");
-              row.style.cssText = "display:flex; gap:12px; flex-wrap:wrap; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--color-rule);";
-              const name = document.createElement("span");
-              name.style.cssText = "font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--color-ink);";
-              name.textContent = exam.exam_name || "Evaluación";
-              const details = document.createElement("span");
-              details.style.cssText = "font-size:0.75rem; font-family:var(--font-mono); color:var(--color-ink-3);";
-              details.textContent = `${dateLabel}${exam.exam_time ? ` · ${exam.exam_time.substring(0, 5)}` : ""}`;
-              row.append(name, details);
-              mExams.append(row);
-            });
-          } else {
-            const empty = document.createElement("p");
-            empty.style.cssText = "font-size:0.75rem; color:var(--color-ink-3); padding-top:4px;";
-            empty.textContent = "Sin exámenes programados.";
-            mExams.append(empty);
-          }
-        }
-
-        if (modal && !modal.open) {
-          modalTrigger = btn;
-          previousOverflow = document.body.style.overflow;
-          modal.showModal();
-          document.body.style.overflow = "hidden";
-          history.pushState({ ...history.state, academicClassModal: true }, "");
-        }
-      });
+      }
     });
-
-    function closeModal(fromHistory = false) {
-      if (!modal?.open) return;
-      modal.close();
-      document.body.style.overflow = previousOverflow;
-      modalTrigger?.focus({ preventScroll: true });
-      if (!fromHistory && history.state?.academicClassModal) history.back();
-    }
-
-    window.addEventListener("popstate", () => closeModal(true));
-    btnClose?.addEventListener("click", () => closeModal());
-    modal?.addEventListener("cancel", event => {
-      event.preventDefault();
-      closeModal();
-    });
-    modal?.addEventListener("click", event => {
-      if (event.target !== modal) return;
-      const bounds = modal.getBoundingClientRect();
-      if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeModal();
-    });
-  </script>
-
-  </InstitutionalLayout>
-)}
-
-<style is:global>
-  /* ══════════════════════════════════════════════════
-     SELECTION WIZARD STYLES (SARA GLASS OS)
-     ══════════════════════════════════════════════════ */
-  .selection-card-btn {
-    background: var(--sara-glass-strong, rgba(255, 255, 255, 0.88));
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
-    border-left: 4px solid var(--sara-sapphire-600, #224FA8);
-    border-radius: var(--sara-radius-md, 12px);
-    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular, rgba(255,255,255,0.9)), var(--sara-shadow-glass-sm);
-    padding: 22px 20px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-    transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--sara-sapphire-950, #0A1329);
-    line-height: 1.2;
-    width: 100%;
   }
-
-  .selection-card-btn:hover {
-    transform: translateY(-2px);
-    border-color: var(--sara-cyan-500, #1CB3CF);
-    border-left-color: var(--sara-cyan-600, #159AB3);
-    box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-md);
-  }
-
-  .selection-card-btn:focus-visible {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 4px;
-  }
-
-  .selection-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-
-  @media (min-width: 768px) {
-    .selection-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 32px;
-    }
-  }
-  @media (min-width: 1024px) {
-    .selection-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-  }
-</style>
+</script>
 
 <style>
-
-  /* ══════════════════════════════════════════════════
-     PAGE HEADER — asimétrico, tipografía dominante
-     ══════════════════════════════════════════════════ */
-  .page-header {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px;
-    margin-bottom: 32px;
-    align-items: end;
-  }
-
-  @media (min-width: 768px) {
-    .page-header {
-      grid-template-columns: 2fr 1fr;
-      gap: 48px;
-    }
-  }
-
-  .page-title {
-    font-size: 2.5rem;       /* 40px — presencia editorial */
-    font-weight: 900;
-    letter-spacing: -0.04em;
-    line-height: 1.0;
-    color: var(--color-ink);
-    margin-top: 8px;
-  }
-
-  @media (min-width: 768px) {
-    .page-title { font-size: 3rem; }    /* 48px en desktop */
-  }
-
-  .page-subtitle {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    color: var(--color-ink-3);
-    letter-spacing: 0.06em;
-    margin-top: 12px;
-    line-height: 1.4;
-  }
-
-  .page-header__selector {
+  .landing-page {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-  }
-
-  /* ══════════════════════════════════════════════════
-     CONTENT GRID — 2 columnas asimétrico
-     ══════════════════════════════════════════════════ */
-  .content-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 40px;
-  }
-
-  @media (min-width: 1024px) {
-    .content-grid {
-      grid-template-columns: 260px 1fr;
-      gap: 56px;
-    }
-  }
-
-  /* ══════════════════════════════════════════════════
-     RESPONSIVE: Desktop table vs Mobile list
-     ══════════════════════════════════════════════════ */
-  .schedule-desktop {
-    display: none;
-    overflow-x: auto;
-  }
-
-  .schedule-mobile {
-    display: block;
-  }
-
-  @media (min-width: 768px) {
-    .schedule-desktop { display: block; }
-    .schedule-mobile { display: none; }
-  }
-
-  /* ══════════════════════════════════════════════════
-     TABLA DE HORARIO — Swiss style (Desktop)
-     Solo reglas horizontales. Sin bordes de celda.
-     Sin fondos alternados. Tipografía como jerarquía.
-     ══════════════════════════════════════════════════ */
-  .section-head {
-    margin-bottom: 16px;
-  }
-
-  .schedule-table {
+    gap: 2.25rem;
     width: 100%;
-    border-collapse: collapse;
-    min-width: 520px;
   }
 
-  /* Línea fuerte bajo el header de la tabla */
-  .schedule-table thead tr {
-    border-bottom: 2px solid var(--color-ink);
-  }
-
-  .schedule-table__time-header,
-  .schedule-table__day-header {
-    font-family: var(--font-mono);
-    font-size: 0.5625rem;       /* 9px */
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--color-ink-3);
-    text-align: left;
-    padding: 0 12px 12px 0;
-    white-space: nowrap;
-  }
-
-  .schedule-table__time-header {
-    width: 96px;
-    padding-right: 16px;
-  }
-
-  /* Filas separadas solo por línea horizontal delgada */
-  .schedule-table__row {
-    border-bottom: 1px solid var(--color-rule);
-    transition: background-color 80ms;
-  }
-
-  .schedule-table__row:last-child {
-    border-bottom: none;
-  }
-
-  .schedule-table__row:hover {
-    background-color: var(--color-muted);
-  }
-
-  .schedule-table__time-cell {
-    text-align: left;
-    padding: 16px 16px 16px 0;
-    vertical-align: top;
-  }
-
-  .time-label {
-    font-family: var(--font-mono);
-    font-size: 0.625rem;
-    font-weight: 600;
-    color: var(--color-ink-3);
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    display: block;
-    padding-top: 2px;
-  }
-
-  .schedule-table__cell {
-    padding: 12px 12px 12px 0;
-    vertical-align: top;
-    min-width: 100px;
-    height: auto;
-    min-height: 96px;
-    box-sizing: border-box;
-  }
-
-  /* Entrada de clase — botón sin estilos de botón */
-  .class-entry {
-    background: none;
-    border: none;
-    padding: 0;
-    text-align: left;
-    cursor: pointer;
+  /* Hero */
+  .landing-hero {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    width: 100%;
-    border-left: 2px solid transparent;
-    padding-left: 8px;
-    transition: border-color 120ms;
-  }
-
-  .class-entry:hover {
-    border-left-color: var(--color-secondary);
-  }
-
-  .class-entry:focus-visible {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 2px;
-  }
-
-  .class-entry__subject {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--color-ink);
-    line-height: 1.2;
-    display: block;
-  }
-
-  .class-entry__professor {
-    font-size: 0.625rem;
-    font-weight: 400;
-    color: var(--color-ink-3);
-    display: block;
-    line-height: 1.3;
-  }
-
-  .class-entry__room {
-    font-family: var(--font-mono);
-    font-size: 0.5625rem;
-    color: var(--color-ink-3);
-    letter-spacing: 0.04em;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .class-entry__lab-tag {
-    font-size: 0.4375rem;     /* 7px */
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    border: 1px solid var(--color-ink-3);
-    padding: 1px 3px;
-    color: var(--color-ink-3);
-  }
-
-  /* ── HTI (Horas de Trabajo Independiente) ── */
-  .independent-work {
-    background-color: color-mix(in srgb, var(--color-secondary) 12%, transparent);
-    border-left-color: var(--color-secondary);
-    padding: 6px 8px;
-    border-radius: 2px;
-  }
-
-  .independent-work:hover {
-    background-color: color-mix(in srgb, var(--color-secondary) 20%, transparent);
-    border-left-color: var(--color-secondary);
-  }
-
-  .class-entry__hti-tag {
-    font-size: 0.4375rem;     /* 7px */
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--color-secondary);
-    display: inline-block;
-    margin-top: 2px;
-  }
-
-  /* ══════════════════════════════════════════════════
-     VISTA LISTA MÓVIL — agrupada por día
-     Swiss Design: separación por regla + tipografía.
-     ══════════════════════════════════════════════════ */
-  .mobile-day {
-    margin-bottom: 0;
-  }
-
-  .mobile-day__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 12px 0 8px;
-    border-bottom: 2px solid var(--color-ink);
-  }
-
-  .mobile-day__name {
-    margin: 0;
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-ink);
-  }
-
-  .mobile-day__count {
-    font-family: var(--font-mono);
-    font-size: 0.5625rem;
-    color: var(--color-ink-3);
-    letter-spacing: 0.04em;
-  }
-
-  .mobile-day__empty {
-    padding: 16px 0;
-    border-bottom: 1px solid var(--color-rule);
-  }
-
-  .mobile-day__empty span {
-    font-size: 0.75rem;
-    color: var(--color-ink-3);
-    font-style: italic;
-  }
-
-  .mobile-day__list {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .mobile-class {
-    display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--color-rule);
-    background: none;
-    border-left: none;
-    border-right: none;
-    border-top: none;
-    text-align: left;
-    cursor: pointer;
+    gap: 0.75rem;
+    padding: 0.5rem 0 1rem;
+    max-width: 820px;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--sara-sapphire-600, #1A367A);
+    text-transform: uppercase;
+  }
+
+  .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--sara-coral-500, #E65642);
+    box-shadow: 0 0 0 2px rgba(230, 86, 66, 0.2);
+  }
+
+  .hero-title {
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: var(--sara-sapphire-950, #0E1A38);
+    margin: 0;
+  }
+
+  .hero-description {
+    font-size: clamp(0.9375rem, 1.8vw, 1.125rem);
+    color: var(--sara-text-secondary, #475569);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* Action buttons */
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
     width: 100%;
-    transition: background-color 80ms;
   }
 
-  .mobile-class:last-child {
-    border-bottom: none;
-  }
-
-  .mobile-class:active {
-    background-color: var(--color-muted);
-  }
-
-  .mobile-class.independent-work {
-    background-color: color-mix(in srgb, var(--color-secondary) 8%, transparent);
-    border-left: 2px solid var(--color-secondary);
-    padding-left: 10px;
-    border-radius: 0;
-  }
-
-  .mobile-class.independent-work:active {
-    background-color: color-mix(in srgb, var(--color-secondary) 16%, transparent);
-  }
-
-  .mobile-class__time {
-    font-family: var(--font-mono);
-    font-size: 0.625rem;
-    font-weight: 600;
-    color: var(--color-ink-3);
-    letter-spacing: 0.02em;
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0 1.25rem;
+    border-radius: var(--radius-lg, 0.75rem);
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
     white-space: nowrap;
-    min-width: 80px;
-    padding-top: 2px;
-    flex-shrink: 0;
   }
 
-  .mobile-class__info {
+  .action-btn--primary {
+    background: linear-gradient(135deg, var(--sara-sapphire-700, #1A367A), var(--sara-sapphire-600, #224FA8));
+    color: #FFFFFF;
+    box-shadow: 0 4px 14px -2px rgba(26, 54, 122, 0.35);
+  }
+
+  .action-btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -2px rgba(26, 54, 122, 0.45);
+  }
+
+  .action-btn--secondary {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--sara-coral-600, #B83523);
+    border: 1px solid rgba(230, 86, 66, 0.3);
+    box-shadow: 0 2px 8px -2px rgba(230, 86, 66, 0.15);
+  }
+
+  .action-btn--secondary:hover {
+    background: #FFFFFF;
+    transform: translateY(-1px);
+    border-color: var(--sara-coral-500, #E65642);
+  }
+
+  .action-btn--ghost {
+    background: rgba(255, 255, 255, 0.75);
+    color: var(--sara-sapphire-700, #1A367A);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+  }
+
+  .action-btn--ghost:hover {
+    background: #FFFFFF;
+    transform: translateY(-1px);
+  }
+
+  /* Main split section */
+  .main-split-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 1.75rem;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .split-column {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    flex: 1;
     min-width: 0;
   }
 
-  .mobile-class__subject {
-    font-size: 0.8125rem;
-    font-weight: 700;
-    color: var(--color-ink);
-    line-height: 1.2;
+  /* Programs section */
+  .programs-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
   }
 
-  .mobile-class__professor {
+  .programs-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .programs-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
     font-size: 0.6875rem;
-    font-weight: 400;
-    color: var(--color-ink-3);
-    line-height: 1.3;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--sara-jade-600, #0E6B47);
+    text-transform: uppercase;
   }
 
-  .mobile-class__meta {
-    font-family: var(--font-mono);
-    font-size: 0.5625rem;
-    color: var(--color-ink-3);
-    letter-spacing: 0.04em;
+  .programs-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--sara-jade-500, #0E6B47);
+    box-shadow: 0 0 0 2px rgba(14, 107, 71, 0.2);
+  }
+
+  .programs-title {
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 800;
+    color: var(--sara-sapphire-950, #0E1A38);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin: 0;
+  }
+
+  .programs-lead {
+    font-size: 0.9375rem;
+    color: var(--sara-text-secondary, #475569);
+    margin: 0;
+    max-width: 64ch;
+    line-height: 1.5;
+  }
+
+  .programs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .program-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: var(--radius-lg, 0.75rem);
+    gap: 1rem;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  .program-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(26, 54, 122, 0.25);
+  }
+
+  .program-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+  }
+
+  .program-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .program-code {
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--sara-sapphire-600, #1A367A);
+  }
+
+  .program-name {
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--sara-sapphire-950, #0E1A38);
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .program-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--sara-cyan-700, #0E7B91);
+    text-decoration: none;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(226, 232, 240, 0.6);
+  }
+
+  .program-link:hover {
+    color: var(--sara-cyan-800, #085A6B);
+    text-decoration: underline;
+  }
+
+  /* Contact footer card */
+  .campus-contact-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: var(--radius-xl, 1rem);
+    margin-top: 0.5rem;
+  }
+
+  .contact-brand {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 1rem;
   }
 
-  /* ══════════════════════════════════════════════════
-     SIDEBAR
-     ══════════════════════════════════════════════════ */
-  .sidebar-section {
-    padding: 20px 0;
+  .contact-heading {
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 800;
+    color: var(--sara-sapphire-950, #0E1A38);
+    margin: 0;
   }
 
-  .sidebar-section:first-child { padding-top: 0; }
+  .contact-sub {
+    font-size: 0.8125rem;
+    color: var(--sara-text-secondary, #475569);
+    margin: 0.25rem 0 0;
+  }
 
-  .sidebar-data {
-    margin-top: 12px;
+  .contact-actions {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
   }
 
-  .data-row {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+  .contact-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md, 0.5rem);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--sara-sapphire-700, #1A367A);
+    background: rgba(26, 54, 122, 0.06);
+    border: 1px solid rgba(26, 54, 122, 0.1);
+    transition: background-color 0.15s ease;
   }
 
-  /* ── EXÁMENES ── */
-  .exam-list {
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
+  .contact-btn:hover {
+    background: rgba(26, 54, 122, 0.12);
   }
 
-  .exam-item {
-    padding: 10px 0;
-    border-bottom: 1px solid var(--color-rule);
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+  .contact-btn--subtle {
+    color: var(--sara-text-secondary, #475569);
+    background: transparent;
+    border-color: rgba(226, 232, 240, 0.8);
   }
 
-  .exam-item:last-child { border-bottom: none; }
-
-  .exam-item__name {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--color-ink);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  .contact-btn--subtle:hover {
+    background: rgba(255, 255, 255, 0.9);
   }
 
-  .exam-item__meta {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
+  /* Responsive / Mobile Calm */
+  @media (max-width: 960px) {
+    .landing-page {
+      gap: 1.75rem;
+    }
 
-  .exam-item__subject {
-    font-size: 0.625rem;
-    color: var(--color-ink-3);
-  }
+    .main-split-section {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
 
-  .exam-item__date {
-    font-family: var(--font-mono);
-    font-size: 0.625rem;
-    color: var(--color-ink-3);
-    letter-spacing: 0.04em;
-  }
+    .hero-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
 
-  /* ══════════════════════════════════════════════════
-     MODAL
-     ══════════════════════════════════════════════════ */
-  #class-modal::backdrop {
-    background: rgba(26, 26, 26, 0.6);
-  }
+    .action-btn {
+      width: 100%;
+    }
 
-  .modal-body {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
+    .campus-contact-card {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 1rem;
+    }
 
-  @media (min-width: 560px) {
-    #class-modal::backdrop {
-    background: rgba(26, 26, 26, 0.6);
-  }
+    .contact-actions {
+      width: 100%;
+    }
 
-  .modal-body {
-      grid-template-columns: 1fr 1px 1fr;
+    .contact-btn {
+      flex: 1;
+      justify-content: center;
     }
   }
 
-  .modal-col {
-    padding: 24px 28px;
-  }
-
-  .modal-divider {
-    background-color: var(--color-rule);
-    width: 1px;
-  }
-
-  @media (max-width: 559px) {
-    .modal-divider { display: none; }
-    .modal-col:first-child { border-bottom: 1px solid var(--color-rule); }
-  }
-
-  .modal-field {
-    margin-bottom: 0;
+  @media (prefers-reduced-motion: reduce) {
+    .action-btn,
+    .program-card,
+    .contact-btn {
+      transition: none;
+    }
+    .action-btn:hover,
+    .program-card:hover {
+      transform: none;
+    }
   }
 </style>
