@@ -1,7 +1,6 @@
 ---
 import InstitutionalLayout from "../layouts/InstitutionalLayout.astro";
-import CampusCarousel from "../components/CampusCarousel.astro";
-import FimeBotChat from "../components/FimeBotChat.astro";
+import CampusTransformContainer from "../components/CampusTransformContainer.astro";
 import QuickAccessGrid from "../components/QuickAccessGrid.astro";
 
 // Compatibilidad hacia atrás: redirigir consultas de grupos directas a /studenthub
@@ -10,10 +9,26 @@ if (Astro.url.searchParams.has("select_group") || Astro.url.searchParams.has("gr
 }
 
 const academicPrograms = [
-  { name: "Ingeniería en Computación Inteligente", code: "ICI", icon: "💻" },
-  { name: "Ingeniería Mecatrónica", code: "IMEC", icon: "🤖" },
-  { name: "Ingeniería Mecánica Electricista", code: "IME", icon: "⚡" },
-  { name: "Ingeniería en Tecnologías e Internet", code: "ITI", icon: "🌐" },
+  {
+    name: "Ingeniería en Computación Inteligente",
+    code: "ICI",
+    svg: `<path d="M16 18l6-6-6-6M8 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    name: "Ingeniería Mecatrónica",
+    code: "IMEC",
+    svg: `<rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/><circle cx="15" cy="15" r="1.5" fill="currentColor"/><path d="M15 9h-2v6h2" stroke="currentColor" stroke-width="1.5"/>`,
+  },
+  {
+    name: "Ingeniería Mecánica Electricista",
+    code: "IME",
+    svg: `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`,
+  },
+  {
+    name: "Ingeniería en Tecnologías e Internet",
+    code: "ITI",
+    svg: `<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.5"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="currentColor" stroke-width="1.5"/>`,
+  },
 ];
 ---
 
@@ -45,12 +60,12 @@ const academicPrograms = [
           </svg>
           <span>Ver Horarios de Clase</span>
         </a>
-        <a href="#fimebot-chat" class="action-btn action-btn--secondary" id="hero-chat-trigger">
+        <button type="button" class="action-btn action-btn--secondary" id="hero-chat-trigger" aria-label="Abrir asistente virtual FimeBot">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
           <span>Preguntar a FimeBot</span>
-        </a>
+        </button>
         <a href="/mapa?from=landing" class="action-btn action-btn--ghost">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
@@ -62,21 +77,13 @@ const academicPrograms = [
       </nav>
     </header>
 
-    <!-- Split Principal: Galería de Campus + FimeBot Chat -->
-    <section class="main-split-section" aria-label="Exploración interactiva de la facultad">
-      <div class="split-column split-column--carousel">
-        <CampusCarousel />
-      </div>
-
-      <div class="split-column split-column--chat">
-        <FimeBotChat />
-      </div>
-    </section>
+    <!-- Contenedor Transformable: Carrusel 16:9 + FimeBot Chat Animado -->
+    <CampusTransformContainer />
 
     <!-- Accesos Rápidos a StudentHUB -->
     <QuickAccessGrid />
 
-    <!-- Oferta Académica FIME -->
+    <!-- Oferta Académica FIME (100% Vectorial, Cero Emojis) -->
     <section class="programs-section" aria-labelledby="programs-title">
       <div class="programs-header">
         <div class="programs-badge">
@@ -90,7 +97,9 @@ const academicPrograms = [
       <div class="programs-grid">
         {academicPrograms.map((program) => (
           <div class="program-card">
-            <span class="program-icon" aria-hidden="true">{program.icon}</span>
+            <div class="program-icon-box" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" set:html={program.svg} />
+            </div>
             <div class="program-info">
               <span class="program-code">{program.code}</span>
               <h3 class="program-name">{program.name}</h3>
@@ -141,32 +150,11 @@ const academicPrograms = [
   </div>
 </InstitutionalLayout>
 
-<script>
-  // Enlace suave hacia el asistente en móvil o desktop
-  const chatTrigger = document.getElementById("hero-chat-trigger");
-  if (chatTrigger) {
-    chatTrigger.addEventListener("click", (e) => {
-      const openBtn = document.getElementById("open-chat-card-btn");
-      if (openBtn && window.getComputedStyle(openBtn).display !== "none") {
-        openBtn.click();
-      }
-      const target = document.getElementById("fimebot-chat");
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
-        const textarea = document.getElementById("fimebot-textarea") as HTMLTextAreaElement | null;
-        if (textarea) {
-          setTimeout(() => textarea.focus(), 300);
-        }
-      }
-    });
-  }
-</script>
-
 <style>
   .landing-page {
     display: flex;
     flex-direction: column;
-    gap: 2.25rem;
+    gap: 2.5rem;
     width: 100%;
   }
 
@@ -176,7 +164,7 @@ const academicPrograms = [
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
-    padding: 0.5rem 0 1rem;
+    padding: 0.5rem 0 0.5rem;
     max-width: 820px;
   }
 
@@ -239,6 +227,8 @@ const academicPrograms = [
     font-size: 0.875rem;
     font-weight: 700;
     text-decoration: none;
+    border: none;
+    cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
     white-space: nowrap;
   }
@@ -276,21 +266,6 @@ const academicPrograms = [
   .action-btn--ghost:hover {
     background: #FFFFFF;
     transform: translateY(-1px);
-  }
-
-  /* Main split section */
-  .main-split-section {
-    display: grid;
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-    gap: 1.75rem;
-    align-items: stretch;
-    width: 100%;
-  }
-
-  .split-column {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
   }
 
   /* Programs section */
@@ -370,9 +345,22 @@ const academicPrograms = [
     border-color: rgba(26, 54, 122, 0.25);
   }
 
-  .program-icon {
-    font-size: 1.75rem;
-    line-height: 1;
+  .program-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-md, 0.5rem);
+    background: rgba(26, 54, 122, 0.08);
+    color: var(--sara-sapphire-600, #1A367A);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .program-card:hover .program-icon-box {
+    transform: scale(1.08);
+    background: rgba(21, 154, 179, 0.12);
+    color: var(--sara-cyan-700, #0E7B91);
   }
 
   .program-info {
@@ -486,15 +474,10 @@ const academicPrograms = [
     background: rgba(255, 255, 255, 0.9);
   }
 
-  /* Responsive / Mobile Calm */
-  @media (max-width: 960px) {
+  /* Responsive Mobile */
+  @media (max-width: 900px) {
     .landing-page {
       gap: 1.75rem;
-    }
-
-    .main-split-section {
-      grid-template-columns: 1fr;
-      gap: 1.25rem;
     }
 
     .hero-actions {
@@ -525,6 +508,7 @@ const academicPrograms = [
   @media (prefers-reduced-motion: reduce) {
     .action-btn,
     .program-card,
+    .program-icon-box,
     .contact-btn {
       transition: none;
     }
