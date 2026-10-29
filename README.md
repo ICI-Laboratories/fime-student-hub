@@ -8,7 +8,7 @@ Este repositorio contiene la versión migrada e independiente de **Student Hub**
 
 ## [UI] Diseño e Identidad Visual — SARA v0.5.0 Prisma Glass OS
 
-La interfaz web de todos los servicios públicos (`services/landing` y `services/student-hub`) ha sido migrada al lenguaje de diseño **SARA v0.5.0 Prisma Glass OS**:
+La interfaz web del frontend (`services/student-hub`) ha sido completamente unificada en **Astro 5** bajo el lenguaje de diseño **SARA v0.5.0 Prisma Glass OS** y la identidad visual institucional de la **Facultad de Ingeniería Mecánica y Eléctrica (Universidad de Colima)**:
 
 - **Paleta Cromática Oficial:**
   - Primario Zafiro (`#1A367A` / `--sara-sapphire-500` / `--sara-sapphire-700`)
@@ -80,16 +80,25 @@ Por motivos de seguridad y cumplimiento del principio de menor privilegio:
 ├── scripts/                 # Scripts SQL de inicialización DDL y datos pre-cargados
 ├── packages/                # Definiciones y tipos compartidos
 └── services/
-    ├── student-hub/         # Frontend web en Astro (SSR)
-    ├── landing/             # Portal web estático y chatbot FimeBot (Pedro)
-    ├── fimebot-backend/     # Backend de FimeBot con conocimiento verificado
-    ├── auth-service/        # Microservicio de autenticación de estudiantes
+    ├── student-hub/         # Frontend unificado en Astro 5 (SSR): Landing, FimeBot, Horarios, Profesores y Mapa
+    ├── fimebot-backend/     # Backend de FimeBot con conocimiento verificado y streaming SSE
+    ├── portal/              # Portal de sesión y catálogo de aplicaciones SARA
     ├── professors-service/  # Microservicio de consulta de información docente
     ├── academic-service/    # Microservicio de materias, grupos y horarios
     ├── reference-service/   # Microservicio de estructuras institucionales
     ├── cv-extractor-service/# Servicio de procesamiento de semblanzas
     └── proxy/               # Reverse proxy Nginx aislado
 ```
+
+### Rutas Principales del Frontend Unificado
+- `/`: **Portal Institucional FIME** (Carrusel de vida universitaria, orientación interactiva con FimeBot y accesos rápidos).
+- `/studenthub`: **Horarios y Aulas** (Selector de carrera/grupo y visualizador de horario semanal con aulas efectivas pre/post receso).
+- `/profesores`: **Directorio de Profesores** (Búsqueda de claustro académico, cubículos y semblanzas).
+- `/mapa`: **Mapa del Campus Coquimatlán** (Localización geográfica y filtrado de aulas/talleres/laboratorios).
+- `/materias`: **Materias y Créditos** por semestre y grupo.
+- `/fechas`: **Calendario de Evaluaciones**.
+- `/aplicaciones`: **Catálogo Digital de Recursos**.
+*(Nota: Las URLs antiguas con parámetros `/?group=...` o `/?select_group=true` son redirigidas de forma transparente a `/studenthub` con preservación de parámetros).*
 
 ---
 
