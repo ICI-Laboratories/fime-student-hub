@@ -10,9 +10,9 @@ const requestedCategory = Astro.url.searchParams.get('categoria') ?? '';
 const category = categories.includes(requestedCategory) ? requestedCategory : '';
 const count = apps.filter(app => matchesApp(app, query, category)).length;
 ---
-<InstitutionalLayout title="Aplicaciones" description="Herramientas académicas y aplicaciones disponibles para estudiantes de FIME en el ecosistema SARA.">
+<InstitutionalLayout title="Aplicaciones" description="Herramientas académicas y aplicaciones disponibles para estudiantes de la Facultad de Ingeniería Mecánica y Eléctrica (FIME).">
   <section class="apps-catalog" aria-labelledby="catalog-title">
-    <p class="overline overline--secondary">ECOSISTEMA DIGITAL ACADÉMICO SARA</p>
+    <p class="overline overline--secondary">PORTAL ACADÉMICO DIGITAL</p>
     <h1 id="catalog-title">Aplicaciones y recursos FIME</h1>
     <p class="catalog-intro">Encuentra tu horario, ubica un aula o elige una herramienta de estudio. Cada recurso indica el nivel de acceso disponible de forma transparente.</p>
 
@@ -61,7 +61,7 @@ const count = apps.filter(app => matchesApp(app, query, category)).length;
 
     <aside class="account-note" aria-label="Información de acceso">
       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-        <img src="/vectors/logos/prisma/sara_isotipo_prisma_claro.svg" alt="" width="20" height="14" aria-hidden="true" />
+        <img src="/vectors/logos/fime_escudo_ucol.svg" alt="Escudo Universidad de Colima" width="22" height="22" aria-hidden="true" />
         <h2 style="font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; color: var(--sara-sapphire-950); margin: 0;">El acceso académico sigue siendo libre</h2>
       </div>
       <p>Horarios, mapa, profesores, materias y evaluaciones se consultan sin necesidad de iniciar sesión. Las aplicaciones SARA integradas indican cuándo requieres tu cuenta central opcional.</p>
