@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import SessionAccess from "../components/SessionAccess.astro";
+import { ClientRouter } from "astro:transitions";
 
 interface Props {
   title: string;
@@ -73,6 +74,7 @@ const moreIsActive = [
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" />
+    <ClientRouter />
   </head>
 
   <body>
