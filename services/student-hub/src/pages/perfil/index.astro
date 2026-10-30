@@ -269,12 +269,18 @@ if (activeGroupSlug) {
   </section>
 
   <script>
-    // Configuración básica del botón de cierre de sesión
-    document.querySelector(".btn-logout")?.addEventListener("click", () => {
-      // Simulación de cierre de sesión
-      localStorage.removeItem("pica_selected_group");
-      window.location.href = "/";
-    });
+    function setupProfileLogout() {
+      const btn = document.querySelector<HTMLButtonElement>(".btn-logout");
+      if (!btn || btn.dataset.initialized) return;
+      btn.dataset.initialized = "true";
+      btn.addEventListener("click", () => {
+        try { localStorage.removeItem("pica_selected_group"); } catch {}
+        document.cookie = "pica_selected_group=; Path=/; Max-Age=0; SameSite=Lax";
+        window.location.href = "/";
+      });
+    }
+    setupProfileLogout();
+    document.addEventListener("astro:page-load", setupProfileLogout);
   </script>
 </InstitutionalLayout>
 

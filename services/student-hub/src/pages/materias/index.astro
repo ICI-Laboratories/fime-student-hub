@@ -4,7 +4,7 @@ import { cargarCarreras, cargarGrupoConProfesores, cargarHorarioDeGrupo, cargarE
 
 // Obtener el grupo activo
 const student = Astro.locals.student;
-const activeGroupSlug = student?.class_group_slug || Astro.url.searchParams.get("group") || "4-b-191";
+const activeGroupSlug = Astro.url.searchParams.get("group") || Astro.cookies.get("pica_selected_group")?.value || student?.class_group_slug || "4-b-191";
 const careers = await cargarCarreras();
 
 let enrolledSubjects = [];
@@ -130,13 +130,22 @@ if (activeGroupSlug) {
 
 
 
-  <script type="module">
-    // Propagación del grupo activo
-    const saved = localStorage.getItem("pica_selected_group");
-    const params = new URLSearchParams(window.location.search);
-    if (!params.has("group") && saved) {
-      window.location.href = `/materias?group=${saved}`;
+  <script>
+    function syncActiveGroup() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("group")) return;
+      try {
+        const saved = localStorage.getItem("pica_selected_group");
+        const hasCookie = document.cookie.split(";").some((c) => c.trim().startsWith("pica_selected_group="));
+        if (saved && !hasCookie) {
+          window.location.replace(`/materias?group=${encodeURIComponent(saved)}`);
+        }
+      } catch {
+        // Ignorar si almacenamiento local está bloqueado
+      }
     }
+    syncActiveGroup();
+    document.addEventListener("astro:page-load", syncActiveGroup);
   </script>
 
 </InstitutionalLayout>

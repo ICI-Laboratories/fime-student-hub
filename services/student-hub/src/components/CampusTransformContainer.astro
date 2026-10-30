@@ -117,17 +117,26 @@ const slides: Slide[] = [
   <!-- Sección del Chatbot FimeBot (Animado con Glass OS) -->
   <section class="chat-section" id="fimebot-chat" aria-label="Asistente FimeBot" tabindex="-1">
     <div class="chat-header">
-      <div class="chat-header-info">
-        <span class="overline-secondary">ORIENTACIÓN SOBRE LA FIME</span>
-        <div class="chat-title-group">
-          <h2>FimeBot</h2>
-          <span class="online-pill">
-            <span class="online-dot"></span> En línea
-          </span>
+      <div class="chat-header-brand">
+        <span class="chat-header-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+            <path d="M4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20H5.5C4.67 20 4 19.33 4 18.5V12Z" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/>
+            <path d="M12 8L13.1 10.9L16 12L13.1 13.1L12 16L10.9 13.1L8 12L10.9 10.9L12 8Z" fill="#E65642" stroke="#E65642" stroke-width="1.1" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <div class="chat-header-info">
+          <span class="overline-secondary">ASISTENTE ESTUDIANTIL FIME</span>
+          <div class="chat-title-group">
+            <h2>FimeBot</h2>
+            <span class="online-pill">
+              <span class="online-dot"></span> En línea
+            </span>
+          </div>
         </div>
       </div>
       <button type="button" id="close-chat-btn" aria-label="Cerrar ventana de chat">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <span class="close-chat-label">Cerrar</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
@@ -144,8 +153,8 @@ const slides: Slide[] = [
             </svg>
           </span>
           <div class="chat-bubble">
-            <p>¡Hola! Soy <strong>FimeBot</strong>. Te oriento sobre la FIME de la Universidad de Colima: carreras, admisión, becas, trámites y ubicación.</p>
-            <p>Mis respuestas incluyen fuentes oficiales verificadas.</p>
+            <p>¡Hola! Soy <strong>FimeBot</strong>. Te oriento sobre la FIME: carreras, admisión, becas, trámites y espacios del campus Coquimatlán.</p>
+            <p>Selecciona un tema rápido o escribe tu pregunta abajo.</p>
           </div>
         </li>
       </ul>
@@ -160,23 +169,25 @@ const slides: Slide[] = [
     </div>
 
     <!-- Entrada de Texto con envío Fitts-compliant -->
-    <div class="chat-input">
-      <textarea
-        placeholder="Pregunta sobre carreras, trámites o servicios…"
-        aria-label="Mensaje para FimeBot"
-        aria-describedby="chat-scope"
-        maxlength="1200"
-        rows="1"
-        id="chat-textarea"
-      ></textarea>
-      <button class="btn-send" id="send-btn" aria-label="Enviar mensaje a FimeBot">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-      </button>
+    <div class="chat-composer">
+      <div class="chat-input">
+        <textarea
+          placeholder="Escribe tu duda sobre la FIME…"
+          aria-label="Mensaje para FimeBot"
+          aria-describedby="chat-scope"
+          maxlength="1200"
+          rows="1"
+          id="chat-textarea"
+        ></textarea>
+        <button type="button" class="btn-send" id="send-btn" aria-label="Enviar mensaje a FimeBot">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <p class="chat-scope" id="chat-scope">Orientación estudiantil sobre la FIME · Respuestas basadas en documentación de UCOL.</p>
     </div>
-    <p class="chat-scope" id="chat-scope">Solo orientación de la FIME · Respuestas fundamentadas en fuentes de UCOL.</p>
   </section>
 </fime-campus-stage>
 
@@ -199,6 +210,7 @@ const slides: Slide[] = [
     }
 
     private cleanup() {
+      document.body.classList.remove("fimebot-mobile-open");
       if (this.abortController) {
         this.abortController.abort();
         this.abortController = null;
@@ -299,53 +311,88 @@ const slides: Slide[] = [
       }
 
       // Elementos del Chatbot
-      const closeBtn = this.querySelector("#close-chat-btn");
+      const closeBtn = this.querySelector("#close-chat-btn") as HTMLButtonElement | null;
       const toggleHeaderBtn = document.getElementById("toggle-chat-btn");
       const heroChatTrigger = document.getElementById("hero-chat-trigger");
       const chatInput = this.querySelector("#chat-textarea") as HTMLTextAreaElement | null;
       const sendBtn = this.querySelector("#send-btn") as HTMLButtonElement | null;
       const chatbox = this.querySelector(".chatbox") as HTMLElement | null;
       const scrollContainer = this.querySelector(".chat-content") as HTMLElement | null;
+      const mobileMedia = window.matchMedia("(max-width: 900px)");
 
-      // Transición Nativa con View Transitions API (document.startViewTransition)
+      const syncBodyScrollLock = (isOpen: boolean) => {
+        document.body.classList.toggle("fimebot-mobile-open", isOpen && mobileMedia.matches);
+      };
+
+      const syncHeaderButton = (isOpen: boolean) => {
+        if (toggleHeaderBtn) {
+          toggleHeaderBtn.setAttribute("aria-expanded", String(isOpen));
+          toggleHeaderBtn.setAttribute("aria-label", `${isOpen ? "Cerrar" : "Abrir"} asistente virtual FimeBot`);
+        }
+      };
+
+      const resizeTextarea = () => {
+        if (!chatInput) return;
+        chatInput.style.height = "auto";
+        chatInput.style.height = `${Math.min(chatInput.scrollHeight, 112)}px`;
+      };
+
+      // Transición Nativa en Desktop + Hoja Completa Accesible en Móvil
       const toggleChat = (forceOpen?: boolean) => {
         const willOpen = typeof forceOpen === "boolean" ? forceOpen : !this.classList.contains("show-chat");
 
         const applyState = () => {
-          if (willOpen) {
-            this.classList.add("show-chat");
-          } else {
-            this.classList.remove("show-chat");
-          }
-
-          if (toggleHeaderBtn) {
-            toggleHeaderBtn.setAttribute("aria-expanded", String(willOpen));
-            toggleHeaderBtn.setAttribute("aria-label", `${willOpen ? "Cerrar" : "Abrir"} asistente virtual FimeBot`);
-          }
+          this.classList.toggle("show-chat", willOpen);
+          syncHeaderButton(willOpen);
+          syncBodyScrollLock(willOpen);
         };
 
-        // Usar View Transitions API nativo de Astro y navegadores modernos si está disponible
-        if (typeof document !== "undefined" && "startViewTransition" in document && !prefersReducedMotion) {
+        if (
+          !mobileMedia.matches &&
+          typeof document !== "undefined" &&
+          "startViewTransition" in document &&
+          !prefersReducedMotion
+        ) {
           (document as any).startViewTransition(applyState);
         } else {
           applyState();
         }
 
-        if (willOpen) {
-          if (window.innerWidth <= 900) {
-            this.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
+        if (!willOpen && window.location.hash === "#fimebot-chat") {
+          history.replaceState(null, "", window.location.pathname + window.location.search);
         }
       };
 
       // Inicialización responsiva móvil
-      if (window.innerWidth <= 900) {
-        if (window.location.hash === "#fimebot-chat") {
-          this.classList.add("show-chat");
-        } else {
-          this.classList.remove("show-chat");
-        }
+      if (mobileMedia.matches) {
+        const openByHash = window.location.hash === "#fimebot-chat";
+        this.classList.toggle("show-chat", openByHash);
+        syncHeaderButton(openByHash);
+        syncBodyScrollLock(openByHash);
+      } else {
+        syncHeaderButton(this.classList.contains("show-chat"));
+        syncBodyScrollLock(false);
       }
+
+      mobileMedia.addEventListener("change", () => {
+        syncBodyScrollLock(this.classList.contains("show-chat"));
+      }, { signal });
+
+      window.addEventListener("hashchange", () => {
+        if (window.location.hash === "#fimebot-chat") {
+          toggleChat(true);
+        }
+      }, { signal });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && mobileMedia.matches && this.classList.contains("show-chat")) {
+          toggleChat(false);
+        }
+      }, { signal });
+
+      document.addEventListener("astro:before-swap", () => {
+        document.body.classList.remove("fimebot-mobile-open");
+      }, { once: true, signal });
 
       closeBtn?.addEventListener("click", () => toggleChat(false), { signal });
       toggleHeaderBtn?.addEventListener("click", () => toggleChat(), { signal });
@@ -353,7 +400,7 @@ const slides: Slide[] = [
         e.preventDefault();
         toggleChat(true);
         if (chatInput) {
-          setTimeout(() => chatInput.focus(), 350);
+          setTimeout(() => chatInput.focus({ preventScroll: true }), 180);
         }
       }, { signal });
 
@@ -471,7 +518,10 @@ const slides: Slide[] = [
       const handleSend = async (userMessage: string) => {
         if (!userMessage.trim() || this.isSending || !chatbox) return;
         this.isSending = true;
-        if (chatInput) chatInput.value = "";
+        if (chatInput) {
+          chatInput.value = "";
+          chatInput.style.height = "auto";
+        }
         if (sendBtn) sendBtn.disabled = true;
 
         chatbox.appendChild(createChatLi(userMessage, "outgoing"));
@@ -572,6 +622,8 @@ const slides: Slide[] = [
       sendBtn?.addEventListener("click", () => {
         if (chatInput) handleSend(chatInput.value);
       }, { signal });
+
+      chatInput?.addEventListener("input", resizeTextarea, { signal });
 
       chatInput?.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -838,27 +890,54 @@ const slides: Slide[] = [
     visibility: visible;
   }
 
+  :global(body.fimebot-mobile-open) {
+    overflow: hidden !important;
+  }
+
   .chat-header {
-    background: var(--sara-glass-dock, rgba(255, 255, 255, 0.82));
-    padding: 12px 18px;
+    background: var(--sara-glass-dock, rgba(255, 255, 255, 0.92));
+    padding: 12px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     border-bottom: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.1));
     box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular);
+    flex-shrink: 0;
+  }
+
+  .chat-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .chat-header-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(230, 86, 66, 0.12);
+    border: 1px solid rgba(230, 86, 66, 0.22);
+    color: var(--sara-sapphire-800, #142B63);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
 
   .chat-header-info {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
   }
 
   .overline-secondary {
     font-family: var(--font-mono, "JetBrains Mono", monospace);
     font-size: 0.625rem;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     color: var(--sara-coral-600, #E65642);
     text-transform: uppercase;
   }
@@ -867,6 +946,7 @@ const slides: Slide[] = [
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   .chat-title-group h2 {
@@ -899,17 +979,28 @@ const slides: Slide[] = [
     box-shadow: 0 0 0 2px rgba(14, 107, 71, 0.2);
   }
 
+  .close-chat-label {
+    display: none;
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
   #close-chat-btn {
     cursor: pointer;
-    color: var(--sara-text-secondary, #64748B);
-    background: transparent;
-    border: none;
-    padding: 8px;
-    display: flex;
+    color: var(--sara-text-secondary, #475569);
+    background: var(--sara-sapphire-50, #F2F6FF);
+    border: 1px solid rgba(26, 54, 122, 0.12);
+    min-width: 38px;
+    min-height: 38px;
+    padding: 6px 10px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 5px;
     border-radius: var(--sara-radius-pill, 9999px);
     transition: background-color 150ms ease, color 150ms ease;
+    flex-shrink: 0;
   }
 
   #close-chat-btn:hover {
@@ -921,6 +1012,7 @@ const slides: Slide[] = [
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 16px;
     background: var(--sara-sapphire-50, #F2F6FF);
   }
@@ -1058,23 +1150,29 @@ const slides: Slide[] = [
 
   .chat-suggestions {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
-    padding: 8px 14px;
+    padding: 10px 14px;
     background: #FFFFFF;
-    border-top: 1px solid rgba(226, 232, 240, 0.8);
-    overflow-x: auto;
-    white-space: nowrap;
+    border-top: 1px solid rgba(226, 232, 240, 0.9);
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+
+  .chat-suggestions::-webkit-scrollbar {
+    display: none;
   }
 
   .chat-suggestions button {
     font-family: var(--font-display, "Manrope", sans-serif);
-    font-size: 0.71875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: var(--sara-sapphire-700, #1A367A);
     background: var(--sara-sapphire-50, #F2F6FF);
-    border: 1px solid rgba(26, 54, 122, 0.12);
+    border: 1px solid rgba(26, 54, 122, 0.14);
     border-radius: var(--sara-radius-pill, 9999px);
-    padding: 4px 10px;
+    padding: 5px 11px;
+    min-height: 30px;
     cursor: pointer;
     transition: all 150ms ease;
     flex-shrink: 0;
@@ -1085,40 +1183,56 @@ const slides: Slide[] = [
     color: var(--sara-sapphire-900, #0A1329);
   }
 
+  .chat-composer {
+    background: #FFFFFF;
+    border-top: 1px solid rgba(226, 232, 240, 0.85);
+    padding: 10px 14px 8px;
+    flex-shrink: 0;
+  }
+
   .chat-input {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 8px;
-    padding: 10px 14px;
+    padding: 4px 4px 4px 12px;
+    background: #F8FAFC;
+    border: 1px solid rgba(26, 54, 122, 0.18);
+    border-radius: 14px;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+  }
+
+  .chat-input:focus-within {
     background: #FFFFFF;
-    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    border-color: var(--sara-cyan-500, #159AB3);
+    box-shadow: 0 0 0 3px rgba(21, 154, 179, 0.16);
   }
 
   .chat-input textarea {
     flex: 1;
     min-width: 0;
-    border: 1px solid rgba(26, 54, 122, 0.16);
-    border-radius: var(--radius-md, 8px);
-    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 0;
     font-family: var(--font-sans, "Inter", sans-serif);
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
+    line-height: 1.4;
     resize: none;
-    height: 38px;
-    outline: none;
+    min-height: 36px;
+    max-height: 112px;
+    outline: none !important;
+    box-shadow: none !important;
     color: var(--sara-text-primary, #141824);
-    background: #FFFFFF;
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    background: transparent;
   }
 
-  .chat-input textarea:focus {
-    border-color: var(--sara-cyan-500, #159AB3);
-    box-shadow: 0 0 0 2px rgba(21, 154, 179, 0.2);
+  .chat-input textarea::placeholder {
+    color: #64748B;
   }
 
   .btn-send {
     width: 38px;
     height: 38px;
-    border-radius: var(--radius-md, 8px);
+    border-radius: 10px;
     background: linear-gradient(135deg, var(--sara-sapphire-700, #1A367A), var(--sara-sapphire-600, #224FA8));
     color: #FFFFFF;
     border: none;
@@ -1126,82 +1240,198 @@ const slides: Slide[] = [
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 150ms ease, background-color 150ms ease;
+    transition: transform 150ms ease, opacity 150ms ease;
     flex-shrink: 0;
   }
 
   .btn-send:hover {
-    transform: scale(1.05);
+    transform: scale(1.04);
+  }
+
+  .btn-send:disabled {
+    opacity: 0.55;
+    cursor: wait;
   }
 
   .chat-scope {
-    font-size: 0.625rem;
+    font-size: 0.65rem;
+    line-height: 1.35;
     color: var(--sara-text-secondary, #64748B);
     text-align: center;
-    margin: 0;
-    padding: 4px 10px 6px;
-    background: #FFFFFF;
+    margin: 6px 0 0;
+    padding: 0 4px;
   }
 
   /* ════════════════════════════════════════════════════
-     ADAPTATIVIDAD MÓVIL (< 900px)
+     ADAPTATIVIDAD MÓVIL (<= 900px)
+     Carrusel limpio en flujo + Hoja completa FimeBot
      ════════════════════════════════════════════════════ */
   @media screen and (max-width: 900px) {
     fime-campus-stage.transform-container,
-    .transform-container {
+    .transform-container,
+    fime-campus-stage.transform-container.show-chat,
+    .transform-container.show-chat {
       display: block;
       aspect-ratio: auto;
-      min-height: 260px;
-      border-radius: var(--sara-radius-md, 12px);
-      overflow: hidden;
+      height: auto;
+      min-height: 0;
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border: none;
+      box-shadow: none;
+      overflow: visible;
+      view-transition-name: none;
     }
 
-    .transform-container .carousel-section {
+    .transform-container .carousel-section,
+    .transform-container.show-chat .carousel-section {
       display: block;
       width: 100%;
-      aspect-ratio: 16 / 10;
-      min-height: 260px;
-    }
-
-    .transform-container .chat-section {
-      display: none;
-    }
-
-    .transform-container.show-chat {
       height: auto;
-      min-height: 480px;
+      border-radius: var(--sara-radius-lg, 16px);
+      overflow: hidden;
+      border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.14));
+      box-shadow: var(--sara-shadow-glass-md, 0 12px 28px -6px rgba(10, 19, 41, 0.12));
+      background: #FFFFFF;
+      view-transition-name: none;
     }
 
-    .transform-container.show-chat .carousel-section {
-      display: none;
-    }
-
-    .transform-container.show-chat .chat-section {
+    .slide {
       display: flex;
+      flex-direction: column;
+      height: auto;
+    }
+
+    .slide img {
+      aspect-ratio: 16 / 10;
+      height: auto;
       width: 100%;
-      height: min(600px, 80svh);
-      min-height: 480px;
-      opacity: 1;
-      transform: none;
-      visibility: visible;
-      pointer-events: auto;
-      border-left: none;
+      object-fit: cover;
     }
 
     .slide-text {
-      padding: 10px 14px;
+      position: static;
+      padding: 12px 16px 14px;
+      background: #FFFFFF;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
     }
 
     .slide-text h3 {
-      font-size: 0.9375rem;
+      font-size: 0.96875rem;
+      margin: 2px 0 4px;
     }
 
     .slide-text p {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+    }
+
+    .carousel-control {
+      top: 32%;
+      width: 38px;
+      height: 38px;
+    }
+    .carousel-control.prev { left: 10px; }
+    .carousel-control.next { right: 10px; }
+
+    .carousel-status {
+      top: 10px;
+      right: 12px;
+    }
+
+    .transform-container .chat-section {
+      display: none;
+      view-transition-name: none;
+    }
+
+    .transform-container.show-chat .chat-section {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      width: 100%;
+      height: 100dvh;
+      max-height: 100dvh;
+      min-height: 0;
+      opacity: 1;
+      transform: none;
+      visibility: visible;
+      pointer-events: auto;
+      border: none;
+      border-radius: 0;
+      background: #FFFFFF;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      animation: mobile-chat-sheet-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes mobile-chat-sheet-in {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .chat-header {
+      padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+      background: #FFFFFF;
+      border-bottom: 1px solid rgba(26, 54, 122, 0.12);
+    }
+
+    .close-chat-label {
+      display: inline;
+    }
+
+    #close-chat-btn {
+      min-height: 40px;
+      padding: 0 14px;
+      background: var(--sara-sapphire-50, #F2F6FF);
+      color: var(--sara-sapphire-800, #142B63);
+    }
+
+    .chat-content {
+      padding: 16px;
+    }
+
+    .chat-bubble {
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      max-width: 86%;
+      padding: 12px 15px;
+    }
+
+    .chat-suggestions {
+      padding: 10px 14px;
+      gap: 8px;
+    }
+
+    .chat-suggestions button {
+      font-size: 0.8125rem;
+      padding: 6px 12px;
+      min-height: 34px;
+    }
+
+    .chat-composer {
+      padding: 10px 14px max(12px, env(safe-area-inset-bottom));
+    }
+
+    .chat-input textarea {
+      font-size: 1rem; /* 16px evita zoom automático en iOS */
+      min-height: 40px;
+    }
+
+    .btn-send {
+      width: 42px;
+      height: 42px;
     }
   }
 

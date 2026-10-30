@@ -1,7 +1,7 @@
 [
   {
     "id": "studenthub",
-    "name": "Student Hub",
+    "name": "Horarios StudentHub",
     "category": "Vida académica",
     "label": "Tu horario, a un paso",
     "description": "Elige carrera, semestre y grupo para consultar tu horario semanal, materias y fechas de evaluación.",
@@ -9,6 +9,8 @@
     "icon": "H",
     "access": "Sin cuenta",
     "aliases": [
+      "student hub",
+      "studenthub",
       "horarios",
       "materias",
       "evaluaciones",

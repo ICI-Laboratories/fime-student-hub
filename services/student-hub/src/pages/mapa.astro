@@ -5,686 +5,1897 @@ import { fetchFromService } from "../lib/api-client.js";
 let schedules = [];
 let schedulesAvailable = true;
 try {
-  schedules = await fetchFromService('academic', '/schedules');
+  schedules = await fetchFromService("academic", "/schedules");
 } catch (e) {
   schedulesAvailable = false;
   console.error("Error al cargar horarios para el mapa:", e);
 }
 
-const schedulesJson = JSON.stringify(schedules);
+const serializedMapPayload = JSON.stringify({
+  schedules: Array.isArray(schedules) ? schedules : [],
+  schedulesAvailable,
+}).replace(/</g, "\\u003c");
 ---
 
-<InstitutionalLayout title="Mapa de Instalaciones" fromLanding={Astro.url.searchParams.get("from") === "landing"}>
-
-  <!-- ==========================================
-       1. ENCABEZADO ASIMÉTRICO (Diseño Suizo)
-       ========================================== -->
+<InstitutionalLayout
+  title="Mapa del Campus"
+  description="Plano interactivo del Campus Coquimatlán enfocado en la FIME: ubica edificios, aulas, talleres, laboratorios y clases programadas."
+  fromLanding={Astro.url.searchParams.get("from") === "landing"}
+>
+  <!-- 1. ENCABEZADO -->
   <div class="page-header">
     <div class="page-header__content">
-      <span class="overline overline--primary">Instalaciones Físicas</span>
+      <span class="overline overline--primary">Campus Coquimatlán · Plano Propio</span>
       <h1 class="page-title">Mapa del Campus</h1>
       <p class="page-subtitle">
-        Encuentra edificios, aulas y laboratorios de FIME en el campus Coquimatlán.
+        Croquis interactivo delimitado exclusivamente al Campus Coquimatlán. Ubica aulas, laboratorios y horarios de la FIME sin salir del recinto universitario.
       </p>
     </div>
   </div>
 
-  <hr class="rule rule--thick" style="margin-bottom: 48px;" />
+  <hr class="rule rule--thick" style="margin-bottom: 28px;" />
 
-  <!-- ==========================================
-       2. CONTENEDOR PRINCIPAL: MAPA + PANEL
-       ========================================== -->
-  <div class="map-layout">
-    
-    <!-- COLUMNA 1: El Mapa Interactivo (Leaflet) -->
+  <!-- 2. CONTENEDOR PRINCIPAL: MAPA + PANEL -->
+  <div class="map-layout" id="campus-map-page">
+    <!-- COLUMNA 1: El Mapa Interactivo -->
     <div class="map-container-wrapper">
-      <div class="search-box-container" style="margin-bottom: 16px; position: relative;">
-        <label for="map-search-input" class="overline" style="margin-bottom: 6px;">Buscar espacio o aula</label>
-        <div style="display: flex; gap: 8px;">
-          <input 
-            type="search" 
-            id="map-search-input" 
-            class="input" 
-            placeholder="Cargando espacios…"
-            disabled
-            autocomplete="off"
-            aria-controls="search-suggestions"
-            aria-describedby="map-search-help map-search-results"
-            style="flex: 1;"
-          />
-          <button type="button" id="btn-clear-search" class="btn btn--ghost" style="height: 44px; display: none;">Limpiar</button>
-        </div>
-        <p id="map-search-help" class="map-note">Busca por edificio o aula. Usa las flechas para recorrer los resultados y Enter para seleccionar.</p>
-        <p id="map-search-results" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
-        <div id="search-suggestions" role="group" aria-label="Espacios encontrados" class="search-suggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--color-surface); border: 1px solid var(--color-rule-strong); z-index: 100; max-height: 200px; overflow-y: auto;"></div>
-      </div>
-      <div class="map-toolbar">
-        <label for="map-base-layer">Vista
-          <select id="map-base-layer" class="input">
-            <option value="streets">Calles · OpenStreetMap</option>
-            <option value="campus">Plano del campus</option>
-          </select>
+      <!-- Buscador -->
+      <div class="search-box-container">
+        <label for="map-search-input" class="overline" style="margin-bottom: 6px; display: block;">
+          Buscar edificio, aula o laboratorio
         </label>
-        <button type="button" id="btn-reset-map" class="btn btn--ghost">Ver todo el campus</button>
+        <div class="search-input-row">
+          <div class="search-input-box">
+            <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input
+              type="search"
+              id="map-search-input"
+              class="input search-field-input"
+              placeholder="Cargando plano del campus…"
+              disabled
+              autocomplete="off"
+              aria-controls="search-suggestions"
+              aria-describedby="map-search-help map-search-results"
+            />
+          </div>
+          <button type="button" id="btn-clear-search" class="btn btn--ghost" style="height: 44px; display: none;">
+            Limpiar
+          </button>
+        </div>
+        <p id="map-search-help" class="map-help-text">
+          Prueba con «Aula B1», «Mecatrónica», «Posgrado», «Cómputo» o «Biblioteca».
+        </p>
+        <p id="map-search-results" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+        <div
+          id="search-suggestions"
+          role="group"
+          aria-label="Espacios encontrados"
+          class="search-suggestions"
+          style="display: none;"
+        ></div>
       </div>
-      <p id="map-status" class="map-status" role="status" aria-live="polite">Cargando espacios del campus…</p>
-      <div id="map" class="interactive-map" role="region" aria-label="Mapa interactivo del campus Coquimatlán"></div>
-      <div class="map-legend" aria-label="Colores de las facultades">
-        <span><i style="background: #0E6B47"></i>FIME</span>
-        <span><i style="background: #224FA8"></i>FIC</span>
-        <span><i style="background: #F27A38"></i>FCQ</span>
-        <span><i style="background: #E65642"></i>FAYD</span>
-        <span><i style="background: #64748B"></i>Otros espacios</span>
+
+      <!-- Filtros rápidos de categoría + Controles de cámara -->
+      <div class="map-controls-bar">
+        <div class="map-filter-chips" role="group" aria-label="Filtrar espacios en el mapa">
+          <button type="button" class="map-chip is-active" data-map-filter="all" aria-pressed="true">
+            Todo el campus
+          </button>
+          <button type="button" class="map-chip" data-map-filter="fime" aria-pressed="false">
+            Zona FIME
+          </button>
+          <button type="button" class="map-chip" data-map-filter="aulas" aria-pressed="false">
+            Aulas FIME
+          </button>
+          <button type="button" class="map-chip" data-map-filter="labs" aria-pressed="false">
+            Laboratorios y Talleres
+          </button>
+          <button type="button" class="map-chip" data-map-filter="admin" aria-pressed="false">
+            Dirección y Cubículos
+          </button>
+        </div>
+
+        <div class="map-toolbar">
+          <div class="map-camera-btns">
+            <button type="button" id="btn-focus-fime" class="btn-map-action btn-map-action--primary">
+              Enfocar FIME
+            </button>
+            <button type="button" id="btn-reset-map" class="btn-map-action">
+              Campus completo
+            </button>
+          </div>
+
+          <label for="map-base-layer" class="map-layer-select-label">
+            <span class="sr-only">Estilo de mapa</span>
+            <select id="map-base-layer" class="input map-layer-select" aria-label="Estilo de mapa">
+              <option value="campus" selected>Plano propio del campus</option>
+              <option value="streets">Con calles de referencia (OSM)</option>
+            </select>
+          </label>
+        </div>
       </div>
-      <p class="map-note">
-        Selecciona un edificio para consultar sus aulas. El plano del campus no necesita cargar imágenes externas.
-        Cartografía © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors (ODbL)</a>.
-        <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener noreferrer">Reportar un error cartográfico</a>.
+
+      <p id="map-status" class="map-status" role="status" aria-live="polite">
+        Cargando plano vectorial del campus…
       </p>
-      <noscript><p>Activa JavaScript para consultar el mapa y buscar aulas. También puedes <a href="https://www.openstreetmap.org/#map=18/19.2135/-103.804">ver el campus en OpenStreetMap</a>.</p></noscript>
+
+      <!-- Lienzo del Mapa -->
+      <div class="map-stage-frame">
+        <div
+          id="map"
+          class="interactive-map show-building-labels"
+          role="region"
+          aria-label="Mapa interactivo delimitado al campus Coquimatlán"
+        ></div>
+      </div>
+
+      <!-- Leyenda -->
+      <div class="map-legend" aria-label="Simbología del campus">
+        <span><i style="background: #0E6B47"></i>FIME</span>
+        <span><i style="background: #224FA8"></i>FIC (Ing. Civil)</span>
+        <span><i style="background: #F27A38"></i>FCQ (Químicas)</span>
+        <span><i style="background: #E65642"></i>FAyD (Arquitectura)</span>
+        <span><i style="background: #64748B"></i>Servicios y otros</span>
+        <span class="legend-walkway"><i class="legend-line"></i>Andadores peatonales</span>
+      </div>
+
+      <p class="map-note">
+        Plano vectorial abstraído al perímetro del Campus Coquimatlán sin depender de mosaicos externos por defecto.
+        Geometría base © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors (ODbL)</a> · Directorio académico StudentHub.
+      </p>
+      <noscript>
+        <p>
+          Activa JavaScript para explorar el plano interactivo y buscar aulas. También puedes
+          <a href="https://www.openstreetmap.org/#map=18/19.2120/-103.8033">consultar la ubicación en OpenStreetMap</a>.
+        </p>
+      </noscript>
     </div>
 
     <!-- COLUMNA 2: Panel de Información Dinámica -->
-    <div class="info-panel-wrapper">
+    <aside class="info-panel-wrapper" aria-label="Información del edificio seleccionado">
       <div class="info-panel" id="space-details-panel">
-        <span class="overline" style="margin-bottom: 16px; display: block;">Detalle de Espacio</span>
-        
+        <span class="overline" style="margin-bottom: 12px; display: block;">Detalle de Instalación</span>
+
         <!-- Estado Inicial (Vacío) -->
         <div id="panel-empty-state" class="empty-state">
-          Selecciona un espacio en el mapa interactivo para consultar su programación y características.
+          <div class="empty-state__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
+          <p class="empty-state__title">Selecciona un edificio en el plano</p>
+          <p class="empty-state__desc">
+            Haz clic sobre cualquier edificio del campus o usa el buscador superior para ver sus aulas, laboratorios y las clases programadas.
+          </p>
+          <div class="empty-state__quick">
+            <span class="overline" style="display: block; margin-bottom: 8px;">Accesos rápidos FIME</span>
+            <div class="quick-building-pills" id="quick-fime-picks">
+              <button type="button" class="room-pill" data-quick-pick="Edificio B FIME">Edificio B</button>
+              <button type="button" class="room-pill" data-quick-pick="Edificio C FIME">Edificio C</button>
+              <button type="button" class="room-pill" data-quick-pick="Aula D1">Edificio D</button>
+              <button type="button" class="room-pill" data-quick-pick="Edificio E FIME">Edificio E</button>
+              <button type="button" class="room-pill" data-quick-pick="Centro Computo FIME">Centro de Cómputo</button>
+              <button type="button" class="room-pill" data-quick-pick="Posgrado FIME">Posgrado</button>
+              <button type="button" class="room-pill" data-quick-pick="Laboratorio de Mecatrónica">Lab. Mecatrónica</button>
+            </div>
+          </div>
         </div>
 
         <!-- Estado Activo -->
         <div id="panel-content-state" style="display: none;">
-          <div>
-            <span id="panel-space-type" class="tag" style="margin-bottom: 8px;">Tipo</span>
-            <h2 id="panel-space-name" tabindex="-1" style="font-size: 2rem; font-weight: 800; color: var(--color-ink); line-height: 1.1; letter-spacing: -0.03em;">
+          <div class="panel-header-meta">
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">
+              <span id="panel-faculty-badge" class="tag tag--primary">FIME</span>
+              <span id="panel-space-type" class="tag">Edificio</span>
+            </div>
+            <h2 id="panel-space-name" tabindex="-1" class="panel-building-title">
               Nombre Espacio
             </h2>
+            <p id="panel-space-subtitle" class="panel-building-sub" style="display: none;"></p>
           </div>
-          
-          <hr class="rule" style="margin: 24px 0;" />
 
-          <!-- Vista de Aulas Internas para Estudiantes -->
-          <div id="panel-rooms-read-only" style="margin-bottom: 24px; display: none;">
-            <span class="overline" style="margin-bottom: 10px; display: block; color: var(--color-ink-2);">Aulas y Laboratorios</span>
-            <div id="panel-rooms-read-only-list" style="display: flex; flex-wrap: wrap; gap: 6px;">
-              <!-- Se insertan por JS -->
-            </div>
-            <hr class="rule" style="margin: 24px 0 0 0;" />
+          <hr class="rule" style="margin: 20px 0;" />
+
+          <!-- Vista interactiva de Aulas Internas -->
+          <div id="panel-rooms-read-only" style="margin-bottom: 20px; display: none;">
+            <span class="overline" style="margin-bottom: 8px; display: block; color: var(--color-ink-2);">
+              Espacios internos (filtra horario al tocar)
+            </span>
+            <div id="panel-rooms-read-only-list" class="room-pills-list"></div>
+            <hr class="rule" style="margin: 20px 0 0 0;" />
           </div>
 
           <div>
-            <span class="overline" style="margin-bottom: 12px; display: block; color: var(--color-primary);">Clases Programadas</span>
-            <div id="panel-classes-list" style="display: flex; flex-direction: column; gap: 16px;">
-              <!-- Se insertan por JS -->
+            <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px;">
+              <span class="overline" style="color: var(--color-primary);">Clases Programadas</span>
+              <span id="panel-classes-count" class="panel-count-badge"></span>
             </div>
+            <div id="panel-classes-list" class="panel-classes-scroll"></div>
           </div>
         </div>
       </div>
-    </div>
-
+    </aside>
   </div>
 
-  <!-- Inyección de Datos -->
-  <script is:inline define:vars={{ schedulesJson, schedulesAvailable }}>
-    window.__SCHEDULES__ = JSON.parse(schedulesJson);
-    window.__MAP_SCHEDULES_AVAILABLE__ = schedulesAvailable;
-  </script>
+  <script type="application/json" id="map-schedules-data" set:html={serializedMapPayload} />
 
-  <!-- ==========================================
-       3. INTEGRACIÓN DE LEAFLET.JS (LOCAL BUNDLE)
-       ========================================== -->
+  <!-- 3. MOTOR DE MAPA PROPIO DEL CAMPUS (LEAFLET + VECTOR GEOJSON) -->
   <script>
-    import L from 'leaflet';
-    import 'leaflet/dist/leaflet.css';
+    import L from "leaflet";
+    import "leaflet/dist/leaflet.css";
 
-    (function initLeaflet() {
-      // Los edificios se sirven desde el proyecto; Leaflet también se empaqueta localmente.
-      const map = L.map('map', {
+    let activeCleanup: (() => void) | null = null;
+
+    function setupCampusMap() {
+      const pageRoot = document.getElementById("campus-map-page");
+      const mapEl = document.getElementById("map");
+      if (!pageRoot || !mapEl || pageRoot.dataset.initialized) return;
+      pageRoot.dataset.initialized = "true";
+
+      if (activeCleanup) {
+        activeCleanup();
+        activeCleanup = null;
+      }
+
+      const lifecycle = new AbortController();
+      const signal = lifecycle.signal;
+
+      // Leer horarios inyectados en el DOM actual
+      const payloadEl = document.getElementById("map-schedules-data");
+      let schedules: Array<Record<string, any>> = [];
+      let schedulesAvailable = true;
+      try {
+        const parsed = JSON.parse(payloadEl?.textContent || "{}");
+        schedules = Array.isArray(parsed.schedules) ? parsed.schedules : [];
+        schedulesAvailable = parsed.schedulesAvailable !== false;
+      } catch {
+        schedules = [];
+      }
+
+      // Inicializar Leaflet bloqueado al área del campus
+      const map = L.map(mapEl, {
         zoomControl: false,
-        minZoom: 15,
-        maxZoom: 21,
-        maxBoundsViscosity: 0.8
-      }).setView([19.2135, -103.804], 18);
+        zoomSnap: 0.25,
+        zoomDelta: 0.5,
+        minZoom: 17,
+        maxZoom: 20.5,
+        maxBoundsViscosity: 1.0,
+        bounceAtZoomLimits: false,
+      }).setView([19.21165, -103.80315], 17.75);
 
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
-      L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+      L.control.zoom({ position: "bottomright", zoomInTitle: "Acercar", zoomOutTitle: "Alejar" }).addTo(map);
+      L.control.scale({ imperial: false, position: "bottomleft", maxWidth: 120 }).addTo(map);
 
-      // Carga interactiva únicamente, con caché HTTP del navegador y Referer válido.
-      // Política: https://operations.osmfoundation.org/policies/tiles/
-      // maxNativeZoom evita pedir teselas inexistentes al acercarse a un aula.
-      const streetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+      // Panes ordenados para garantizar legibilidad arquitectónica e interactividad
+      const groundPane = map.createPane("campusGroundPane");
+      groundPane.style.zIndex = "250";
+      groundPane.style.pointerEvents = "none";
+
+      const maskPane = map.createPane("campusMaskPane");
+      maskPane.style.zIndex = "350";
+      maskPane.style.pointerEvents = "none";
+
+      const labelsPane = map.createPane("campusLabelsPane");
+      labelsPane.style.zIndex = "620";
+      labelsPane.style.pointerEvents = "none";
+
+      // Capa opcional de calles OSM (secundaria; el plano vectorial propio es la vista principal)
+      const streetLayer = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxNativeZoom: 19,
-        maxZoom: 21,
-        referrerPolicy: 'strict-origin-when-cross-origin',
+        maxZoom: 20.5,
+        referrerPolicy: "strict-origin-when-cross-origin",
         updateWhenIdle: true,
-        keepBuffer: 1
+        keepBuffer: 1,
       });
-      const baseLayerSelect = document.getElementById('map-base-layer');
-      const mapStatus = document.getElementById('map-status');
-      let campusBounds;
-      let campusLoaded = false;
+
+      const customBaseGroup = L.layerGroup().addTo(map);
+      const labelsGroup = L.layerGroup().addTo(map);
+      let exteriorMaskPolygon: L.Polygon | null = null;
+      let campusPerimeterLayer: L.Polygon | null = null;
+      let geojsonLayer: L.GeoJSON | null = null;
+      let campusBounds: L.LatLngBounds | null = null;
+      let fimeBounds: L.LatLngBounds | null = null;
+      let selectedLayer: L.Path | null = null;
+      let activeCategory = "all";
       let streetFailures = 0;
 
-      function updateMapStatus(message) {
-        if (mapStatus) mapStatus.textContent = message;
-      }
-
-      function setBaseLayer(value, failed = false) {
-        if (baseLayerSelect) baseLayerSelect.value = value;
-        if (value === 'streets') {
-          streetFailures = 0;
-          streetLayer.addTo(map);
-          updateMapStatus(campusLoaded ? 'Busca un aula o selecciona un edificio en el mapa.' : 'Cargando espacios del campus…');
-        } else {
-          map.removeLayer(streetLayer);
-          updateMapStatus(failed
-            ? (campusLoaded
-              ? 'No se pudo cargar el mapa de calles. Puedes seguir consultando los edificios en el plano del campus.'
-              : 'No se pudieron cargar el mapa de calles ni el directorio. Recarga la página para volver a intentarlo.')
-            : 'Plano del campus: edificios y aulas sin imágenes externas.');
-        }
-      }
-
-      baseLayerSelect?.addEventListener('change', () => setBaseLayer(baseLayerSelect.value));
-      streetLayer.on('tileerror', () => {
-        streetFailures += 1;
-        if (streetFailures >= 3 && map.hasLayer(streetLayer)) setBaseLayer('campus', true);
-      });
-      document.getElementById('btn-reset-map')?.addEventListener('click', () => {
-        if (campusBounds?.isValid()) map.fitBounds(campusBounds, { padding: [20, 20], maxZoom: 18 });
-      });
-
-      function textContent(value) {
-        const element = document.createElement('span');
-        element.textContent = String(value ?? '');
-        return element;
-      }
-
-      function escapeHtml(value) {
-        return String(value ?? '').replace(/[&<>"']/g, character => ({
-          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        })[character]);
-      }
-
-      function normalizeSearch(value) {
-        return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-      }
-
-      // Elementos del DOM para el panel
+      const baseLayerSelect = document.getElementById("map-base-layer") as HTMLSelectElement | null;
+      const mapStatus = document.getElementById("map-status");
       const emptyState = document.getElementById("panel-empty-state");
       const contentState = document.getElementById("panel-content-state");
       const pName = document.getElementById("panel-space-name");
+      const pSubtitle = document.getElementById("panel-space-subtitle");
+      const pFaculty = document.getElementById("panel-faculty-badge");
       const pType = document.getElementById("panel-space-type");
+      const pClassesCount = document.getElementById("panel-classes-count");
       const pClassesList = document.getElementById("panel-classes-list");
       const pRoomsReadOnly = document.getElementById("panel-rooms-read-only");
       const pRoomsReadOnlyList = document.getElementById("panel-rooms-read-only-list");
-      let localSpaces = [];
 
-      function isRoomMatch(targetStr, spaceStr) {
-        if (!targetStr || !spaceStr) return false;
-        
-        const clean = (str) => normalizeSearch(str)
-          .replace(/^(aula|laboratorio|taller|edificio)\s+/, '')
-          .replace(/\(.*\)/, '')
-          .replace(/[°ª]/g, '')
+      function updateMapStatus(message: string) {
+        if (mapStatus) mapStatus.textContent = message;
+      }
+
+      function normalizeSearch(value: unknown): string {
+        return String(value ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/inteligancia/g, "inteligencia")
           .trim();
+      }
+
+      function escapeHtml(value: unknown): string {
+        return String(value ?? "").replace(/[&<>"']/g, (ch) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch] || ch)
+        );
+      }
+
+      function getFacultyColor(faculty?: string): string {
+        switch (faculty) {
+          case "FIME":
+            return "#0E6B47";
+          case "FIC":
+            return "#224FA8";
+          case "FCQ":
+            return "#F27A38";
+          case "FAYD":
+            return "#E65642";
+          default:
+            return "#64748B";
+        }
+      }
+
+      function getFacultyLabel(faculty?: string): string {
+        switch (faculty) {
+          case "FIME":
+            return "FIME";
+          case "FIC":
+            return "FIC · Ing. Civil";
+          case "FCQ":
+            return "FCQ · Ciencias Químicas";
+          case "FAYD":
+            return "FAyD · Arquitectura";
+          default:
+            return "Campus Coquimatlán";
+        }
+      }
+
+      function getShortLabel(name: string, spaces: Array<{ name?: string }>): { text: string; major: boolean } | null {
+        const n = normalizeSearch(name);
+        if (!n) return null;
+        if (n.includes("edificio b fime")) return { text: "Edif. B", major: true };
+        if (n.includes("edificio c fime")) return { text: "Edif. C", major: true };
+        if (n.includes("edificio d fime")) {
+          const hasD1 = spaces.some((s) => normalizeSearch(s.name).includes("d1"));
+          return { text: hasD1 ? "Edif. D (1–2)" : "Edif. D (3–4)", major: true };
+        }
+        if (n.includes("edificio e fime")) return { text: "Edif. E", major: true };
+        if (n.includes("posgrado fime")) return { text: "Posgrado", major: true };
+        if (n.includes("centro computo fime")) return { text: "Cómputo", major: true };
+        if (n.includes("usos multiples fime")) return { text: "Usos Múltiples", major: false };
+        if (n.includes("mecatronica")) return { text: "Mecatrónica", major: false };
+        if (n.includes("mecanica fime")) return { text: "Lab. Mecánica", major: false };
+        if (n.includes("electronica fime")) return { text: "Lab. Electrónica", major: false };
+        if (n.includes("telefonia/robotica")) return { text: "Robótica / IA", major: false };
+        if (n.includes("electromagnetismo")) return { text: "Electromag.", major: false };
+        if (n.includes("taller de maquinas")) return { text: "T. Máquinas", major: false };
+        if (n.includes("cubiculos ptc fime")) return { text: "Cubículos PTC", major: false };
+        if (n === "auditorio") return { text: "Auditorio FIME", major: true };
+        if (n === "direccion") return { text: "Dirección FIME", major: true };
+        if (n.includes("explanada fime")) return { text: "Explanada", major: false };
+        if (n.includes("plaza de servicios")) return { text: "Cafetería", major: true };
+        return null;
+      }
+
+      function classifyBuilding(props: Record<string, any>): string[] {
+        const tags: string[] = ["all"];
+        const faculty = props._resolvedFaculty || "";
+        const nameNorm = normalizeSearch(props._resolvedName || props.name || "");
+        const spaces: Array<{ name?: string }> = Array.isArray(props.spaces) ? props.spaces : [];
+        const allNames = [nameNorm, ...spaces.map((s) => normalizeSearch(s.name))].join(" ");
+
+        if (faculty === "FIME") {
+          tags.push("fime");
+          if (
+            allNames.includes("aula") ||
+            nameNorm.includes("edificio b") ||
+            nameNorm.includes("edificio c") ||
+            nameNorm.includes("edificio d") ||
+            nameNorm.includes("edificio e") ||
+            nameNorm.includes("posgrado")
+          ) {
+            tags.push("aulas");
+          }
+          if (
+            allNames.includes("laboratorio") ||
+            allNames.includes("taller") ||
+            allNames.includes("computo") ||
+            nameNorm.includes("usos multiples")
+          ) {
+            tags.push("labs");
+          }
+          if (
+            allNames.includes("direccion") ||
+            allNames.includes("cubiculo") ||
+            allNames.includes("auditorio")
+          ) {
+            tags.push("admin");
+          }
+        }
+        return tags;
+      }
+
+      function syncBaseMode(mode: string, fallbackFromError = false) {
+        if (baseLayerSelect) baseLayerSelect.value = mode;
+        const isStreets = mode === "streets";
+
+        if (isStreets) {
+          streetFailures = 0;
+          if (!map.hasLayer(streetLayer)) streetLayer.addTo(map);
+          if (exteriorMaskPolygon) exteriorMaskPolygon.setStyle({ fillOpacity: 0.72, fillColor: "#DCE4F0" });
+          if (campusPerimeterLayer) campusPerimeterLayer.setStyle({ fillOpacity: 0.08 });
+          updateMapStatus("Vista con calles de referencia activa. El desplazamiento permanece delimitado al campus.");
+        } else {
+          if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
+          if (exteriorMaskPolygon) exteriorMaskPolygon.setStyle({ fillOpacity: 0.97, fillColor: "#E6ECF5" });
+          if (campusPerimeterLayer) campusPerimeterLayer.setStyle({ fillOpacity: 1 });
+          updateMapStatus(
+            fallbackFromError
+              ? "Las teselas externas no respondieron; se activó automáticamente el plano propio del campus."
+              : "Plano propio del Campus Coquimatlán: selecciona un edificio o filtra espacios de la FIME."
+          );
+        }
+      }
+
+      baseLayerSelect?.addEventListener("change", () => syncBaseMode(baseLayerSelect.value), { signal });
+      streetLayer.on("tileerror", () => {
+        streetFailures += 1;
+        if (streetFailures >= 3 && map.hasLayer(streetLayer)) {
+          syncBaseMode("campus", true);
+        }
+      });
+
+      const syncZoomLabels = () => {
+        const z = map.getZoom();
+        mapEl.classList.toggle("show-building-labels", z >= 17.0);
+        mapEl.classList.toggle("show-minor-labels", z >= 18.0);
+        mapEl.classList.toggle("show-detail-landmarks", z >= 17.25);
+      };
+      map.on("zoomend", syncZoomLabels);
+
+      function computeStyle(feature?: GeoJSON.Feature, isSelected = false): L.PathOptions {
+        const props = (feature?.properties || {}) as Record<string, any>;
+        const faculty = props._resolvedFaculty || "OTHER";
+        const color = getFacultyColor(faculty);
+        const categories: string[] = props._categories || ["all"];
+        const matchesFilter = activeCategory === "all" || categories.includes(activeCategory);
+
+        if (isSelected) {
+          return {
+            color: "#0A1329",
+            weight: 3,
+            fillColor: color,
+            fillOpacity: 0.82,
+          };
+        }
+
+        if (!matchesFilter) {
+          return {
+            color: "#94A3B8",
+            weight: 0.8,
+            fillColor: "#CBD5E1",
+            fillOpacity: 0.2,
+          };
+        }
+
+        const isFime = faculty === "FIME";
+        return {
+          color: isFime ? "#09482F" : "#334155",
+          weight: isFime ? 1.8 : 1.1,
+          fillColor: color,
+          fillOpacity: isFime ? 0.62 : faculty !== "OTHER" ? 0.34 : 0.24,
+        };
+      }
+
+      function refreshLayerStyles() {
+        if (!geojsonLayer) return;
+        geojsonLayer.eachLayer((layer: any) => {
+          layer.setStyle(computeStyle(layer.feature, layer === selectedLayer));
+        });
+      }
+
+      function isRoomMatch(targetStr: string, spaceStr: string): boolean {
+        if (!targetStr || !spaceStr) return false;
+        const clean = (str: string) =>
+          normalizeSearch(str)
+            .replace(/^(aula|laboratorio|taller|edificio)\s+/, "")
+            .replace(/\(.*\)/, "")
+            .replace(/[°ª]/g, "")
+            .trim();
 
         const normTarget = clean(targetStr);
         const normSpace = clean(spaceStr);
-
+        if (!normTarget || !normSpace) return false;
         if (normTarget === normSpace) return true;
 
-        if (normTarget.includes('/')) {
-          const parts = normTarget.split('/').map(p => clean(p));
-          if (parts.some(p => p === normSpace || (p.length >= 2 && normSpace.includes(p)))) return true;
+        if (normTarget.includes("/")) {
+          const parts = normTarget.split("/").map((p) => clean(p));
+          if (parts.some((p) => p === normSpace || (p.length >= 2 && normSpace.includes(p)))) return true;
         }
-        if (normSpace.includes('/')) {
-          const parts = normSpace.split('/').map(p => clean(p));
-          if (parts.some(p => p === normTarget || (p.length >= 2 && normTarget.includes(p)))) return true;
+        if (normSpace.includes("/")) {
+          const parts = normSpace.split("/").map((p) => clean(p));
+          if (parts.some((p) => p === normTarget || (p.length >= 2 && normTarget.includes(p)))) return true;
         }
 
-        if (normTarget.length >= 2 && normSpace.includes(normTarget)) return true;
-        if (normSpace.length >= 2 && normTarget.includes(normSpace)) return true;
-
+        // Evitar falsos positivos de una sola letra, exigir coincidencia de token o >= 3 chars
+        if (normTarget.length >= 3 && normSpace.includes(normTarget)) return true;
+        if (normSpace.length >= 3 && normTarget.includes(normSpace)) return true;
         return false;
       }
 
-      // Función para renderizar detalles del panel lateral
-      function displaySpaceDetails(feature) {
+      function renderClassesForSelection(
+        buildingName: string,
+        spaces: Array<{ name?: string; faculty?: string }>,
+        roomFilter: string | null
+      ) {
+        if (!pClassesList) return;
+        pClassesList.replaceChildren();
+
+        if (!schedulesAvailable) {
+          const unavailable = document.createElement("p");
+          unavailable.className = "panel-empty-classes";
+          unavailable.textContent =
+            "No se pudieron cargar los horarios en este momento. El directorio de espacios permanece activo.";
+          pClassesList.append(unavailable);
+          if (pClassesCount) pClassesCount.textContent = "";
+          return;
+        }
+
+        const matching = schedules.filter((s) => {
+          if (!s.classroom_name) return false;
+          if (roomFilter) {
+            return isRoomMatch(s.classroom_name, roomFilter);
+          }
+          if (buildingName && isRoomMatch(s.classroom_name, buildingName)) return true;
+          return spaces.some((r) => r.name && isRoomMatch(s.classroom_name, r.name));
+        });
+
+        if (pClassesCount) {
+          pClassesCount.textContent = matching.length
+            ? `${matching.length} ${matching.length === 1 ? "clase" : "clases"}`
+            : "0 clases";
+        }
+
+        if (matching.length > 0) {
+          matching.slice(0, 40).forEach((c) => {
+            const row = document.createElement("div");
+            row.className = "panel-class-card";
+            row.innerHTML =
+              `<strong class="panel-class-card__subject">${escapeHtml(c.subject_name)}</strong>` +
+              `<div class="panel-class-card__meta">` +
+              `<span>Grupo <strong>${escapeHtml(c.group_name || c.class_group_name || "—")}</strong></span>` +
+              `<span class="panel-class-card__time">${escapeHtml(c.day_of_week)} · ${escapeHtml(String(c.start_time || "").slice(0, 5))}–${escapeHtml(String(c.end_time || "").slice(0, 5))}</span>` +
+              `</div>` +
+              `<span class="panel-class-card__sub">Aula: <strong>${escapeHtml(c.classroom_name || "N/A")}</strong> · ${escapeHtml(c.professor_name || "Sin asignar")}</span>`;
+            pClassesList.appendChild(row);
+          });
+        } else {
+          const empty = document.createElement("p");
+          empty.className = "panel-empty-classes";
+          empty.textContent = roomFilter
+            ? `No hay clases registradas para «${roomFilter}» en el periodo actual.`
+            : "No hay clases registradas en este espacio dentro del catálogo actual de horarios FIME.";
+          pClassesList.append(empty);
+        }
+      }
+
+      function displaySpaceDetails(feature: GeoJSON.Feature, preselectedRoom: string | null = null) {
         if (emptyState) emptyState.style.display = "none";
         if (contentState) contentState.style.display = "block";
 
-        const props = feature.properties || {};
-        const spaceName = props.name || "Edificio sin nombre";
-        
-        localSpaces = props.spaces ? JSON.parse(JSON.stringify(props.spaces)) : [];
-        
-        if (pName) pName.textContent = spaceName;
+        const props = (feature.properties || {}) as Record<string, any>;
+        const spaceName = props._resolvedName || props.name || "Edificio Universitario";
+        const subtitle = props._resolvedSubtitle || "";
+        const faculty = props._resolvedFaculty || "OTHER";
+        const localSpaces: Array<{ name: string; faculty?: string }> = Array.isArray(props.spaces)
+          ? props.spaces
+          : [];
 
-        // Renderizar vista de solo lectura de aulas internas
+        if (pName) pName.textContent = spaceName;
+        if (pSubtitle) {
+          pSubtitle.textContent = subtitle;
+          pSubtitle.style.display = subtitle ? "block" : "none";
+        }
+
+        if (pFaculty) {
+          pFaculty.textContent = getFacultyLabel(faculty);
+          const color = getFacultyColor(faculty);
+          pFaculty.style.backgroundColor = `${color}18`;
+          pFaculty.style.color = color;
+          pFaculty.style.borderColor = `${color}40`;
+        }
+
+        if (pType) {
+          const types: Record<string, string> = {
+            university: "Edificio académico",
+            theatre: "Auditorio",
+            laboratory: "Laboratorio",
+            roof: "Explanada cubierta",
+            school: "Bachillerato",
+          };
+          const rawType = props.amenity || props.building || "university";
+          pType.textContent = types[rawType] || "Instalación universitaria";
+        }
+
+        let activeRoom: string | null = preselectedRoom;
+
         if (pRoomsReadOnly && pRoomsReadOnlyList) {
-          pRoomsReadOnlyList.innerHTML = "";
+          pRoomsReadOnlyList.replaceChildren();
           if (localSpaces.length > 0) {
-            localSpaces.forEach(room => {
-              const tag = document.createElement("span");
-              tag.style.cssText = `
-                display: inline-block;
-                padding: 4px 8px;
-                font-size: 0.75rem;
-                font-family: var(--font-sans);
-                font-weight: 700;
-                border-radius: 4px;
-                border: 1px solid ${getFacultyColor(room.faculty)};
-                background: ${getFacultyColor(room.faculty)}15;
-                color: var(--color-ink);
-              `;
-              tag.textContent = `${room.name} (${room.faculty})`;
-              pRoomsReadOnlyList.appendChild(tag);
+            const syncRoomButtons = () => {
+              pRoomsReadOnlyList.querySelectorAll<HTMLButtonElement>("button").forEach((b) => {
+                const isSelected = (b.dataset.room || "") === (activeRoom || "");
+                b.classList.toggle("is-selected", isSelected);
+                b.setAttribute("aria-pressed", String(isSelected));
+              });
+            };
+
+            if (localSpaces.length > 1) {
+              const allBtn = document.createElement("button");
+              allBtn.type = "button";
+              allBtn.className = "room-pill";
+              allBtn.dataset.room = "";
+              allBtn.textContent = `Todos (${localSpaces.length})`;
+              allBtn.addEventListener("click", () => {
+                activeRoom = null;
+                syncRoomButtons();
+                renderClassesForSelection(spaceName, localSpaces, null);
+              });
+              pRoomsReadOnlyList.appendChild(allBtn);
+            }
+
+            localSpaces.forEach((room) => {
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.className = "room-pill";
+              btn.dataset.room = room.name;
+              btn.textContent = room.name;
+              btn.addEventListener("click", () => {
+                activeRoom = activeRoom === room.name ? null : room.name;
+                syncRoomButtons();
+                renderClassesForSelection(spaceName, localSpaces, activeRoom);
+              });
+              pRoomsReadOnlyList.appendChild(btn);
             });
+
+            syncRoomButtons();
             pRoomsReadOnly.style.display = "block";
           } else {
             pRoomsReadOnly.style.display = "none";
           }
         }
 
-        if (pType) {
-          const types = { university: 'Edificio universitario', theatre: 'Auditorio', yes: 'Edificio', laboratory: 'Laboratorio' };
-          const typeStr = props.amenity || props.building || 'general';
-          pType.textContent = types[typeStr] || 'Espacio del campus';
-          pType.className = 'tag tag--primary';
-        }
+        renderClassesForSelection(spaceName, localSpaces, activeRoom);
+      }
 
-        // Buscar clases programadas para cualquiera de los sub-espacios de este edificio
-        if (pClassesList) {
-          pClassesList.replaceChildren();
-          if (window.__MAP_SCHEDULES_AVAILABLE__ === false) {
-            const unavailable = document.createElement('p');
-            unavailable.textContent = 'No se pudieron cargar los horarios. Recarga la página para volver a intentarlo. El mapa sigue disponible.';
-            pClassesList.append(unavailable);
-            return;
+      function selectBuildingLayer(layer: any, preselectedRoom: string | null = null, scrollPanelOnMobile = false) {
+        selectedLayer = layer;
+        refreshLayerStyles();
+        if (layer.bringToFront) layer.bringToFront();
+        const bounds = layer.getBounds?.();
+        if (bounds?.isValid()) {
+          map.fitBounds(bounds, { padding: [64, 64], maxZoom: 19.5, animate: true });
+        }
+        displaySpaceDetails(layer.feature, preselectedRoom);
+        if (scrollPanelOnMobile && window.innerWidth < 1024) {
+          document.getElementById("space-details-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+
+      // Renderizar capas base del campus desde /campus-base.geojson
+      function renderCampusBase(baseData: any) {
+        if (!baseData || !Array.isArray(baseData.features)) return;
+
+        for (const feat of baseData.features) {
+          const kind = feat.properties?.layer;
+          const geom = feat.geometry;
+          if (!geom) continue;
+
+          if (kind === "campus_perimeter" && geom.type === "Polygon") {
+            const ringLatLngs = geom.coordinates[0].map((c: number[]) => [c[1], c[0]] as [number, number]);
+
+            // Suelo interior del campus
+            campusPerimeterLayer = L.polygon(ringLatLngs, {
+              pane: "campusGroundPane",
+              color: "#1A367A",
+              weight: 2.2,
+              dashArray: "6 4",
+              fillColor: "#F6F9FC",
+              fillOpacity: 1,
+              interactive: false,
+            }).addTo(customBaseGroup);
+
+            // Máscara exterior para aislar visualmente el campus del resto del municipio
+            const outerWorld: [number, number][] = [
+              [-85, -180],
+              [-85, 180],
+              [85, 180],
+              [85, -180],
+            ];
+            exteriorMaskPolygon = L.polygon([outerWorld, ringLatLngs], {
+              pane: "campusMaskPane",
+              stroke: true,
+              color: "#1A367A",
+              weight: 1.5,
+              fillColor: "#E6ECF5",
+              fillOpacity: 0.97,
+              interactive: false,
+            }).addTo(map);
+
+            campusBounds = campusPerimeterLayer.getBounds();
+          } else if (kind === "green_area") {
+            L.geoJSON(feat, {
+              pane: "campusGroundPane",
+              interactive: false,
+              style: {
+                color: "#A7DFBE",
+                weight: 0.8,
+                fillColor: "#DCF2E4",
+                fillOpacity: 0.85,
+              },
+            }).addTo(customBaseGroup);
+          } else if (kind === "plaza") {
+            L.geoJSON(feat, {
+              pane: "campusGroundPane",
+              interactive: false,
+              style: {
+                color: "#CBD5E1",
+                weight: 0.8,
+                fillColor: "#EAEFF6",
+                fillOpacity: 0.9,
+              },
+            }).addTo(customBaseGroup);
+          } else if (kind === "parking_area") {
+            L.geoJSON(feat, {
+              pane: "campusGroundPane",
+              interactive: false,
+              style: {
+                color: "#CBD5E1",
+                weight: 1,
+                dashArray: "3 3",
+                fillColor: "#E2E8F0",
+                fillOpacity: 0.75,
+              },
+            }).addTo(customBaseGroup);
+          } else if (kind === "sports_court") {
+            L.geoJSON(feat, {
+              pane: "campusGroundPane",
+              interactive: false,
+              style: {
+                color: "#94A3B8",
+                weight: 1,
+                fillColor: "#DBEAFE",
+                fillOpacity: 0.7,
+              },
+            }).addTo(customBaseGroup);
+          } else if (kind === "water") {
+            L.geoJSON(feat, {
+              pane: "campusGroundPane",
+              interactive: false,
+              style: {
+                color: "#38BDF8",
+                weight: 1.2,
+                fillColor: "#BAE6FD",
+                fillOpacity: 0.9,
+              },
+            }).addTo(customBaseGroup);
+          } else if (kind === "access_road") {
+            L.geoJSON(feat, {
+              pane: "campusGroundPane",
+              interactive: false,
+              style: {
+                color: "#CBD5E1",
+                weight: 6,
+                lineCap: "round",
+                opacity: 0.85,
+              },
+            }).addTo(customBaseGroup);
+            L.geoJSON(feat, {
+              pane: "campusGroundPane",
+              interactive: false,
+              style: {
+                color: "#FFFFFF",
+                weight: 3.4,
+                lineCap: "round",
+                opacity: 0.95,
+              },
+            }).addTo(customBaseGroup);
+          } else if (kind === "service_road") {
+            L.geoJSON(feat, {
+              pane: "campusGroundPane",
+              interactive: false,
+              style: {
+                color: "#CBD5E1",
+                weight: 3,
+                lineCap: "round",
+                opacity: 0.85,
+              },
+            }).addTo(customBaseGroup);
+          } else if (kind === "walkway") {
+            L.geoJSON(feat, {
+              pane: "campusGroundPane",
+              interactive: false,
+              style: {
+                color: "#B8C7DA",
+                weight: 1.6,
+                dashArray: feat.properties?.subkind === "steps" ? "2 3" : undefined,
+                opacity: 0.85,
+              },
+            }).addTo(customBaseGroup);
+          } else if (kind === "landmark" && geom.type === "Point") {
+            const [lon, lat] = geom.coordinates;
+            const lmKind = feat.properties?.kind || "service";
+            const name = feat.properties?.name || "";
+            const cls =
+              lmKind === "zone"
+                ? `campus-landmark campus-landmark--zone campus-landmark--${(feat.properties?.faculty || "other").toLowerCase()}`
+                : lmKind === "entrance"
+                  ? "campus-landmark campus-landmark--entrance"
+                  : "campus-landmark campus-landmark--poi";
+
+            L.marker([lat, lon], {
+              pane: "campusLabelsPane",
+              interactive: false,
+              icon: L.divIcon({
+                className: "campus-div-icon",
+                html: `<span class="${cls}">${escapeHtml(name)}</span>`,
+                iconSize: [0, 0],
+              }),
+            }).addTo(labelsGroup);
           }
-          
-          const classes = (Array.isArray(window.__SCHEDULES__) ? window.__SCHEDULES__ : []).filter(s => {
-            if (!s.classroom_name) return false;
-            if (isRoomMatch(s.classroom_name, spaceName)) return true;
-            return localSpaces.some(r => r.name && isRoomMatch(s.classroom_name, r.name));
+        }
+      }
+
+      // Cargar en paralelo nuestra base vectorial + el directorio de edificios
+      Promise.all([
+        fetch("/campus-base.geojson", { signal }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/campus.geojson", { signal }).then((r) => {
+          if (!r.ok) throw new Error(`GeoJSON HTTP ${r.status}`);
+          return r.json();
+        }),
+      ])
+        .then(([baseData, campusData]) => {
+          if (signal.aborted) return;
+          if (campusData?.type !== "FeatureCollection" || !Array.isArray(campusData.features)) {
+            throw new Error("Formato de campus inválido");
+          }
+
+          if (baseData) {
+            renderCampusBase(baseData);
+          }
+
+          const hints: Record<string, { name: string; faculty: string }> = baseData?.buildingHints || {};
+          const fimeLayersBounds = L.latLngBounds([]);
+
+          // Enriquecer en memoria sin modificar public/campus.geojson
+          campusData.features.forEach((feat: any) => {
+            const props = feat.properties || (feat.properties = {});
+            const geom = feat.geometry;
+            const ring =
+              geom?.type === "Polygon"
+                ? geom.coordinates[0]
+                : geom?.type === "MultiPolygon"
+                  ? geom.coordinates[0][0]
+                  : [];
+            const pts = ring.length > 1 && ring[0][0] === ring[ring.length - 1][0] && ring[0][1] === ring[ring.length - 1][1]
+              ? ring.slice(0, -1)
+              : ring;
+            const cx = pts.length ? pts.reduce((acc: number, p: number[]) => acc + p[0], 0) / pts.length : 0;
+            const cy = pts.length ? pts.reduce((acc: number, p: number[]) => acc + p[1], 0) / pts.length : 0;
+            const centroidKey = `${cy.toFixed(4)},${cx.toFixed(4)}`;
+            const hint = hints[centroidKey];
+
+            const spaces: Array<{ name?: string; faculty?: string }> = Array.isArray(props.spaces) ? props.spaces : [];
+            const rawName = (props.name || "").trim();
+            const inferredFime = rawName.toUpperCase().includes("FIME");
+
+            let resolvedName = rawName || hint?.name || "Edificio Universitario";
+            let resolvedSubtitle = "";
+
+            // Distinguir los dos bloques del Edificio D FIME
+            if (normalizeSearch(rawName) === "edificio d fime" && spaces.length > 0) {
+              const roomLabels = spaces.map((s) => s.name).filter(Boolean).join(" y ");
+              resolvedSubtitle = roomLabels;
+              const isFirstBlock = spaces.some((s) => normalizeSearch(s.name).includes("d1"));
+              resolvedName = isFirstBlock ? "Edificio D FIME (Aulas D1–D2)" : "Edificio D FIME (Aulas D3–D4)";
+            } else if (spaces.length > 0) {
+              resolvedSubtitle = `${spaces.length} ${spaces.length === 1 ? "espacio registrado" : "espacios registrados"}`;
+            }
+
+            const resolvedFaculty =
+              (spaces.length > 0 ? spaces[0].faculty : undefined) ||
+              props.faculty ||
+              (inferredFime ? "FIME" : undefined) ||
+              hint?.faculty ||
+              "OTHER";
+
+            props._resolvedName = resolvedName;
+            props._resolvedSubtitle = resolvedSubtitle;
+            props._resolvedFaculty = resolvedFaculty;
+            props._centroid = [cy, cx];
+            props._categories = classifyBuilding(props);
           });
 
-          if (classes && classes.length > 0) {
-            classes.forEach(c => {
-              const row = document.createElement("div");
-              row.style.cssText = "padding-bottom: 12px; border-bottom: 1px solid var(--color-rule);";
-              row.innerHTML = 
-                '<strong style="display: block; font-size: 1rem; color: var(--color-ink); margin-bottom: 4px;">' + escapeHtml(c.subject_name) + '</strong>' +
-                '<div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem; color: var(--color-ink-2);">' +
-                '<span>Grupo: <strong style="color: var(--color-ink);">' + escapeHtml(c.group_name || c.class_group_name || "") + '</strong></span>' +
-                '<span style="font-family: var(--font-mono);">' + escapeHtml(c.day_of_week) + ' ' + escapeHtml(String(c.start_time || '').slice(0,5)) + '-' + escapeHtml(String(c.end_time || '').slice(0,5)) + '</span>' +
-                '</div>' +
-                '<span style="display: block; font-size: 0.75rem; color: var(--color-ink-3); margin-top: 4px;">Espacio: <strong>' + escapeHtml(c.classroom_name || "N/A") + '</strong> | Docente: ' + escapeHtml(c.professor_name || "Sin asignar") + '</span>';
-              pClassesList.appendChild(row);
-            });
-          } else {
-            pClassesList.innerHTML = 
-              '<p style="font-size: 0.875rem; color: var(--color-ink-3); font-style: italic;">No hay horarios registrados para este espacio. Esto no confirma que esté disponible.</p>';
-          }
-        }
-      }
+          geojsonLayer = L.geoJSON(campusData, {
+            style: (feat) => computeStyle(feat, false),
+            onEachFeature: (feature, layer: any) => {
+              const props = feature.properties || {};
+              const displayName = props._resolvedName || props.name || "Espacio";
+              const spaces = Array.isArray(props.spaces) ? props.spaces : [];
 
-      // Colores de Facultades alineados con SARA Prisma
-      function getFacultyColor(faculty) {
-        switch (faculty) {
-          case 'FIME': return '#0E6B47'; // UdeC Green / Emerald
-          case 'FIC': return '#224FA8';  // SARA Sapphire
-          case 'FCQ': return '#F27A38';  // SARA Amber Solar
-          case 'FAYD': return '#E65642'; // SARA Coral Magma
-          default: return '#64748B';     // SARA Academic Slate
-        }
-      }
+              layer.bindTooltip(displayName, {
+                className: "swiss-tooltip",
+                direction: "top",
+                sticky: true,
+              });
 
-      // Estilo de los Polígonos GeoJSON (pintado por la facultad de la primera aula registrada)
-      function baseStyle(feature) {
-        const props = feature.properties || {};
-        const spaces = props.spaces || [];
-        const faculty = spaces.length > 0 ? spaces[0].faculty : props.faculty;
-        const color = getFacultyColor(faculty);
-        return {
-          color: "var(--color-ink)",
-          weight: 1,
-          fillColor: color,
-          fillOpacity: faculty ? 0.4 : 0.18
-        };
-      }
-
-      let geojsonLayer;
-
-      // 4. Cargar GeoJSON
-      fetch('/campus.geojson', { signal: AbortSignal.timeout(15000) })
-        .then(res => {
-          if (!res.ok) throw new Error(`GeoJSON HTTP ${res.status}`);
-          return res.json();
-        })
-        .then(data => {
-          if (data.type !== 'FeatureCollection' || !Array.isArray(data.features)) throw new Error('Formato de campus inválido');
-          geojsonLayer = L.geoJSON(data, {
-            attribution: 'Edificios: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · Directorio PICA',
-            style: baseStyle,
-            onEachFeature: (feature, layer) => {
-              // Tooltip básico al hover
-              if (feature.properties && feature.properties.name) {
-                layer.bindTooltip(textContent(feature.properties.name), {
-                  className: 'swiss-tooltip',
-                  direction: 'top'
-                });
+              if (props._resolvedFaculty === "FIME" && layer.getBounds) {
+                fimeLayersBounds.extend(layer.getBounds());
               }
 
-              // Eventos de interacción
+              // Etiqueta permanente compacta en los edificios principales de la FIME
+              const shortLabel = getShortLabel(props.name || "", spaces);
+              if (shortLabel && Array.isArray(props._centroid)) {
+                const modCls = shortLabel.major ? "building-chip-label--major" : "building-chip-label--minor";
+                L.marker(props._centroid as [number, number], {
+                  pane: "campusLabelsPane",
+                  interactive: false,
+                  icon: L.divIcon({
+                    className: "campus-div-icon",
+                    html: `<span class="building-chip-label ${modCls}">${escapeHtml(shortLabel.text)}</span>`,
+                    iconSize: [0, 0],
+                  }),
+                }).addTo(labelsGroup);
+              }
+
               layer.on({
-                mouseover: (e) => {
-                  const l = e.target;
-                  l.setStyle({
-                    color: "var(--color-primary)",
-                    weight: 2,
-                    fillOpacity: 0.5
-                  });
-                  if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-                    l.bringToFront();
+                mouseover: (e: L.LeafletMouseEvent) => {
+                  const target = e.target;
+                  if (target !== selectedLayer) {
+                    target.setStyle({
+                      color: "#159AB3",
+                      weight: 2.5,
+                      fillOpacity: 0.78,
+                    });
+                    if (target.bringToFront) target.bringToFront();
                   }
                 },
-                mouseout: (e) => {
-                  geojsonLayer.resetStyle(e.target);
+                mouseout: (e: L.LeafletMouseEvent) => {
+                  const target = e.target;
+                  target.setStyle(computeStyle(target.feature, target === selectedLayer));
                 },
-                click: (e) => {
-                  map.fitBounds(e.target.getBounds(), { padding: [50, 50], maxZoom: 20 });
-                  displaySpaceDetails(feature);
-                }
+                click: () => {
+                  selectBuildingLayer(layer, null, false);
+                },
               });
-            }
+            },
           }).addTo(map);
 
-          // Ajustar mapa a los datos iniciales
-          campusBounds = geojsonLayer.getBounds();
-          if (campusBounds.isValid()) {
-            map.fitBounds(campusBounds, { padding: [20, 20], maxZoom: 18 });
-            // Permitir ver calles de acceso y volver al campus con el botón.
-            map.setMaxBounds(campusBounds.pad(1));
+          if (!campusBounds || !campusBounds.isValid()) {
+            campusBounds = geojsonLayer.getBounds();
           }
-          campusLoaded = true;
-          setBaseLayer(baseLayerSelect?.value || 'streets');
+          if (fimeLayersBounds.isValid()) {
+            fimeBounds = fimeLayersBounds;
+          }
 
-           // La URL puede seleccionar un espacio; la vista pública es de solo lectura.
-           const urlParams = new URLSearchParams(window.location.search);
-           const highlightName = urlParams.get('highlight');
-           if (highlightName) {
-             let foundLayer = null;
-             geojsonLayer.eachLayer(layer => {
-               if (foundLayer) return;
-               const props = layer.feature.properties || {};
-               const bName = props.name || "";
-               const spaces = props.spaces || [];
-               
-               if (isRoomMatch(highlightName, bName)) {
-                 foundLayer = layer;
-                 return;
-               }
-               if (spaces.some(sp => isRoomMatch(highlightName, sp.name))) {
-                 foundLayer = layer;
-                 return;
-               }
-             });
+          // Bloquear estrictamente el desplazamiento y el zoom mínimo al campus Coquimatlán
+          if (campusBounds && campusBounds.isValid()) {
+            const fittedZoom = map.getBoundsZoom(campusBounds, false, L.point(16, 16));
+            const strictMinZoom = Math.max(16.75, Math.min(17.5, fittedZoom));
+            map.setMinZoom(strictMinZoom);
+            map.setMaxBounds(campusBounds.pad(0.06));
 
-             if (foundLayer) {
-               map.fitBounds(foundLayer.getBounds(), { maxZoom: 20, padding: [50, 50] });
-               foundLayer.fire('click');
-             }
-           }
+            // Vista inicial centrada ligeramente hacia el sector FIME / centro del campus
+            if (fimeBounds && fimeBounds.isValid()) {
+              map.fitBounds(fimeBounds.pad(0.28), { padding: [20, 20], maxZoom: 18.25, animate: false });
+            } else {
+              map.fitBounds(campusBounds, { padding: [16, 16], maxZoom: 18, animate: false });
+            }
+          }
 
-          // ── Search & Filter Logic ──
-          const searchInput = document.getElementById("map-search-input");
-          const clearBtn = document.getElementById("btn-clear-search");
+          syncZoomLabels();
+          syncBaseMode(baseLayerSelect?.value || "campus");
+
+          // Botones de cámara rápida
+          document.getElementById("btn-focus-fime")?.addEventListener(
+            "click",
+            () => {
+              if (fimeBounds?.isValid()) {
+                map.fitBounds(fimeBounds.pad(0.18), { padding: [24, 24], maxZoom: 18.75, animate: true });
+              }
+            },
+            { signal }
+          );
+
+          document.getElementById("btn-reset-map")?.addEventListener(
+            "click",
+            () => {
+              if (campusBounds?.isValid()) {
+                map.fitBounds(campusBounds, { padding: [18, 18], maxZoom: 18, animate: true });
+              }
+            },
+            { signal }
+          );
+
+          // Filtros rápidos por categoría
+          const filterButtons = [...document.querySelectorAll<HTMLButtonElement>("[data-map-filter]")];
+          filterButtons.forEach((chip) => {
+            chip.addEventListener(
+              "click",
+              () => {
+                activeCategory = chip.dataset.mapFilter || "all";
+                filterButtons.forEach((b) => {
+                  const active = b === chip;
+                  b.classList.toggle("is-active", active);
+                  b.setAttribute("aria-pressed", String(active));
+                });
+                refreshLayerStyles();
+                if (activeCategory !== "all" && fimeBounds?.isValid()) {
+                  map.fitBounds(fimeBounds.pad(0.2), { padding: [24, 24], maxZoom: 18.75, animate: true });
+                } else if (activeCategory === "all" && campusBounds?.isValid()) {
+                  map.fitBounds(campusBounds, { padding: [18, 18], maxZoom: 18, animate: true });
+                }
+              },
+              { signal }
+            );
+          });
+
+          // Función auxiliar para localizar edificio/aula por nombre
+          function findAndSelectByName(queryName: string, scrollMobile = false): boolean {
+            if (!geojsonLayer || !queryName) return false;
+            let matchedLayer: any = null;
+            let matchedRoom: string | null = null;
+
+            geojsonLayer.eachLayer((layer: any) => {
+              if (matchedLayer) return;
+              const props = layer.feature?.properties || {};
+              const bName = props._resolvedName || props.name || "";
+              const rawName = props.name || "";
+              const spaces: Array<{ name?: string }> = Array.isArray(props.spaces) ? props.spaces : [];
+
+              const exactSpace = spaces.find((sp) => sp.name && isRoomMatch(queryName, sp.name));
+              if (exactSpace) {
+                matchedLayer = layer;
+                matchedRoom = exactSpace.name || null;
+                return;
+              }
+              if (isRoomMatch(queryName, bName) || (rawName && isRoomMatch(queryName, rawName))) {
+                matchedLayer = layer;
+              }
+            });
+
+            if (matchedLayer) {
+              selectBuildingLayer(matchedLayer, matchedRoom, scrollMobile);
+              return true;
+            }
+            return false;
+          }
+
+          // Accesos rápidos en el estado vacío del panel
+          document.querySelectorAll<HTMLButtonElement>("[data-quick-pick]").forEach((btn) => {
+            btn.addEventListener(
+              "click",
+              () => {
+                const target = btn.dataset.quickPick || "";
+                findAndSelectByName(target, false);
+              },
+              { signal }
+            );
+          });
+
+          // Soporte para ?highlight= desde el modal de horarios
+          const urlParams = new URLSearchParams(window.location.search);
+          const highlightName = urlParams.get("highlight");
+          if (highlightName) {
+            findAndSelectByName(highlightName, true);
+          }
+
+          // Buscador interactivo accesible
+          const searchInput = document.getElementById("map-search-input") as HTMLInputElement | null;
+          const clearBtn = document.getElementById("btn-clear-search") as HTMLButtonElement | null;
           const suggestionsContainer = document.getElementById("search-suggestions");
-
-          const resultStatus = document.getElementById('map-search-results');
-          let announceTimer;
+          const resultStatus = document.getElementById("map-search-results");
+          let announceTimer: ReturnType<typeof setTimeout>;
 
           function closeSuggestions() {
-            suggestionsContainer.style.display = 'none';
+            if (suggestionsContainer) suggestionsContainer.style.display = "none";
           }
 
-          function performSearch(query) {
+          function performSearch(query: string) {
+            if (!suggestionsContainer || !clearBtn || !geojsonLayer) return;
             clearTimeout(announceTimer);
             const normalizedQuery = normalizeSearch(query);
             suggestionsContainer.replaceChildren();
+
             if (!normalizedQuery) {
               closeSuggestions();
-              clearBtn.style.display = 'none';
-              if (resultStatus) resultStatus.textContent = '';
+              clearBtn.style.display = "none";
+              if (resultStatus) resultStatus.textContent = "";
               return;
             }
-            clearBtn.style.display = 'block';
-            const matches = [];
-            geojsonLayer.eachLayer(layer => {
-              const buildingName = layer.feature.properties?.name || 'Edificio';
-              const spaces = layer.feature.properties?.spaces || [];
-              if (layer.feature.properties?.name && normalizeSearch(buildingName).includes(normalizedQuery)) {
-                matches.push({ displayName: buildingName, searchName: buildingName, layer });
+
+            clearBtn.style.display = "inline-flex";
+            const matches: Array<{
+              displayName: string;
+              badge: string;
+              searchName: string;
+              roomFilter: string | null;
+              layer: any;
+              priority: number;
+            }> = [];
+
+            geojsonLayer.eachLayer((layer: any) => {
+              const props = layer.feature?.properties || {};
+              const buildingName = props._resolvedName || props.name || "Edificio";
+              const faculty = props._resolvedFaculty || "OTHER";
+              const spaces: Array<{ name?: string; faculty?: string }> = Array.isArray(props.spaces)
+                ? props.spaces
+                : [];
+              const isFime = faculty === "FIME" ? 0 : 1;
+
+              if (normalizeSearch(buildingName).includes(normalizedQuery)) {
+                matches.push({
+                  displayName: buildingName,
+                  badge: getFacultyLabel(faculty),
+                  searchName: buildingName,
+                  roomFilter: null,
+                  layer,
+                  priority: isFime,
+                });
               }
-              spaces.forEach(space => {
-                if (space.name && normalizeSearch(space.name).includes(normalizedQuery) && normalizeSearch(space.name) !== normalizeSearch(buildingName)) {
-                  matches.push({ displayName: `${space.name} (${buildingName})`, searchName: space.name, layer });
+
+              spaces.forEach((space) => {
+                if (
+                  space.name &&
+                  normalizeSearch(space.name).includes(normalizedQuery) &&
+                  normalizeSearch(space.name) !== normalizeSearch(buildingName)
+                ) {
+                  matches.push({
+                    displayName: `${space.name} — ${buildingName}`,
+                    badge: space.faculty || faculty,
+                    searchName: space.name,
+                    roomFilter: space.name,
+                    layer,
+                    priority: isFime,
+                  });
                 }
               });
             });
-            const visible = matches.slice(0, 30);
+
+            matches.sort((a, b) => a.priority - b.priority || a.displayName.localeCompare(b.displayName, "es"));
+            const visible = matches.slice(0, 25);
+
             for (const match of visible) {
-              const button = document.createElement('button');
-              button.type = 'button';
-              button.className = 'suggestion-item';
-              button.style.cssText = 'display:block;width:100%;text-align:left;min-height:44px;padding:10px 16px;background:none;border:0;border-bottom:1px solid var(--color-rule);cursor:pointer;font:inherit;color:var(--color-ink);';
-              button.textContent = match.displayName;
-              button.addEventListener('click', () => {
-                match.layer.fire('click');
-                searchInput.value = match.searchName;
+              const button = document.createElement("button");
+              button.type = "button";
+              button.className = "suggestion-item";
+              button.innerHTML =
+                `<span>${escapeHtml(match.displayName)}</span>` +
+                `<span class="suggestion-item__badge">${escapeHtml(match.badge)}</span>`;
+              button.addEventListener("click", () => {
+                selectBuildingLayer(match.layer, match.roomFilter, true);
+                if (searchInput) searchInput.value = match.searchName;
                 closeSuggestions();
                 clearTimeout(announceTimer);
                 if (resultStatus) resultStatus.textContent = `Seleccionado: ${match.displayName}.`;
-                pName?.focus();
+                pName?.focus({ preventScroll: true });
               });
               suggestionsContainer.append(button);
             }
+
             if (!visible.length) {
-              const empty = document.createElement('p');
-              empty.textContent = 'No se encontraron espacios. Prueba con otro nombre.';
-              empty.style.padding = '10px 16px';
+              const empty = document.createElement("p");
+              empty.className = "suggestion-empty";
+              empty.textContent = "No se encontraron espacios con ese nombre en el campus.";
               suggestionsContainer.append(empty);
             }
-            suggestionsContainer.style.display = 'block';
+
+            suggestionsContainer.style.display = "block";
             announceTimer = setTimeout(() => {
-              if (resultStatus) resultStatus.textContent = visible.length
-                ? `${matches.length} ${matches.length === 1 ? 'espacio encontrado' : 'espacios encontrados'}.${matches.length > 30 ? ' Se muestran los primeros 30; escribe un nombre más específico.' : ''}`
-                : 'No se encontraron espacios.';
+              if (resultStatus) {
+                resultStatus.textContent = visible.length
+                  ? `${matches.length} ${matches.length === 1 ? "espacio encontrado" : "espacios encontrados"}.`
+                  : "No se encontraron espacios.";
+              }
             }, 200);
           }
 
-          searchInput?.addEventListener('input', event => performSearch(event.target.value));
-          searchInput?.addEventListener('keydown', event => {
-            if (event.key === 'Escape') closeSuggestions();
-            if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && suggestionsContainer.style.display === 'none') {
-              performSearch(searchInput.value);
-            }
-            if (suggestionsContainer.style.display === 'none') return;
-            const buttons = [...suggestionsContainer.querySelectorAll('button')];
-            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-              event.preventDefault();
-              (event.key === 'ArrowDown' ? buttons[0] : buttons.at(-1))?.focus();
-            }
-            if (event.key === 'Enter' && buttons.length) {
-              event.preventDefault(); buttons[0].click();
-            }
-          });
-          suggestionsContainer.addEventListener('keydown', event => {
-            const buttons = [...suggestionsContainer.querySelectorAll('button')];
-            const index = buttons.indexOf(document.activeElement);
-            if (event.key === 'Escape') {
-              event.preventDefault(); closeSuggestions(); searchInput.focus();
-            } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-              event.preventDefault();
-              const next = index + (event.key === 'ArrowDown' ? 1 : -1);
-              if (next < 0) searchInput.focus();
-              else buttons[Math.min(next, buttons.length - 1)]?.focus();
-            } else if (event.key === 'Home' || event.key === 'End') {
-              event.preventDefault(); (event.key === 'Home' ? buttons[0] : buttons.at(-1))?.focus();
-            }
-          });
-          clearBtn?.addEventListener('click', () => {
-            searchInput.value = ''; performSearch(''); searchInput.focus();
-          });
-          document.addEventListener('click', event => {
-            if (!suggestionsContainer.contains(event.target) && event.target !== searchInput) closeSuggestions();
-          });
-          document.addEventListener('focusin', event => {
-            if (!suggestionsContainer.contains(event.target) && event.target !== searchInput) closeSuggestions();
-          });
-          searchInput.disabled = false;
-          searchInput.placeholder = 'Ej. Mecatrónica, Dirección, Aula 1...';
+          searchInput?.addEventListener("input", (event) => performSearch((event.target as HTMLInputElement).value), { signal });
+          searchInput?.addEventListener(
+            "keydown",
+            (event) => {
+              if (!suggestionsContainer || !searchInput) return;
+              if (event.key === "Escape") closeSuggestions();
+              if ((event.key === "ArrowDown" || event.key === "ArrowUp") && suggestionsContainer.style.display === "none") {
+                performSearch(searchInput.value);
+              }
+              if (suggestionsContainer.style.display === "none") return;
+              const buttons = [...suggestionsContainer.querySelectorAll<HTMLButtonElement>("button")];
+              if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault();
+                (event.key === "ArrowDown" ? buttons[0] : buttons.at(-1))?.focus();
+              }
+              if (event.key === "Enter" && buttons.length) {
+                event.preventDefault();
+                buttons[0].click();
+              }
+            },
+            { signal }
+          );
 
+          suggestionsContainer?.addEventListener(
+            "keydown",
+            (event) => {
+              if (!suggestionsContainer || !searchInput) return;
+              const buttons = [...suggestionsContainer.querySelectorAll<HTMLButtonElement>("button")];
+              const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+              if (event.key === "Escape") {
+                event.preventDefault();
+                closeSuggestions();
+                searchInput.focus();
+              } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault();
+                const next = index + (event.key === "ArrowDown" ? 1 : -1);
+                if (next < 0) searchInput.focus();
+                else buttons[Math.min(next, buttons.length - 1)]?.focus();
+              } else if (event.key === "Home" || event.key === "End") {
+                event.preventDefault();
+                (event.key === "Home" ? buttons[0] : buttons.at(-1))?.focus();
+              }
+            },
+            { signal }
+          );
+
+          clearBtn?.addEventListener(
+            "click",
+            () => {
+              if (!searchInput) return;
+              searchInput.value = "";
+              performSearch("");
+              searchInput.focus();
+            },
+            { signal }
+          );
+
+          document.addEventListener(
+            "click",
+            (event) => {
+              if (suggestionsContainer && !suggestionsContainer.contains(event.target as Node) && event.target !== searchInput) {
+                closeSuggestions();
+              }
+            },
+            { signal }
+          );
+
+          if (searchInput) {
+            searchInput.disabled = false;
+            searchInput.placeholder = "Ej. Aula B1, Mecatrónica, Posgrado, Cómputo…";
+          }
         })
-        .catch(err => {
-          console.error('Error cargando GeoJSON:', err);
-          const unavailableSearch = document.getElementById('map-search-input');
-          if (unavailableSearch) unavailableSearch.placeholder = 'Búsqueda no disponible';
-          if (baseLayerSelect?.value === 'streets') streetLayer.addTo(map);
-          updateMapStatus('No se pudo cargar el directorio de edificios. Recarga la página para volver a intentarlo.');
-          if (emptyState) emptyState.textContent = 'El directorio de aulas no está disponible por el momento.';
+        .catch((err) => {
+          if (signal.aborted) return;
+          console.error("Error cargando mapa del campus:", err);
+          const unavailableSearch = document.getElementById("map-search-input") as HTMLInputElement | null;
+          if (unavailableSearch) unavailableSearch.placeholder = "Búsqueda no disponible";
+          updateMapStatus("No se pudo cargar el directorio de edificios. Recarga la página para volver a intentarlo.");
         });
-    })();
-  </script>
 
+      const dispose = () => {
+        lifecycle.abort();
+        try {
+          map.remove();
+        } catch {
+          // Ignorar si ya fue desmontado
+        }
+        delete pageRoot.dataset.initialized;
+      };
+
+      activeCleanup = dispose;
+      document.addEventListener("astro:before-swap", dispose, { once: true, signal });
+    }
+
+    setupCampusMap();
+    document.addEventListener("astro:page-load", setupCampusMap);
+  </script>
 </InstitutionalLayout>
 
 <style>
-  /* Page Header */
   .page-header {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    margin-bottom: 24px;
+    gap: 10px;
+    margin-bottom: 20px;
   }
 
   .page-title {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 4vw, 3rem);
+    font-size: clamp(2rem, 4vw, 2.85rem);
     font-weight: 900;
     letter-spacing: -0.04em;
     line-height: 1.05;
     color: var(--sara-sapphire-950, #0A1329);
-    margin-top: 6px;
+    margin: 4px 0 0;
   }
+
   .page-subtitle {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--color-ink-3);
-    letter-spacing: 0.04em;
-    margin-top: 8px;
+    font-size: 0.9375rem;
+    color: var(--color-ink-2);
+    line-height: 1.5;
+    max-width: 72ch;
+    margin: 4px 0 0;
   }
 
   /* Layout Mapa y Panel */
   .map-layout {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 28px;
+    align-items: start;
   }
+
   @media (min-width: 1024px) {
     .map-layout {
-      grid-template-columns: 2fr 1.1fr;
-      gap: 40px;
+      grid-template-columns: minmax(0, 1.85fr) minmax(320px, 1fr);
+      gap: 32px;
+    }
+    .info-panel-wrapper {
+      position: sticky;
+      top: 112px;
     }
   }
 
-  /* Contenedor del Mapa */
+  /* Buscador */
+  .search-box-container {
+    margin-bottom: 14px;
+    position: relative;
+  }
+
+  .search-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .search-input-box {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--color-ink-3, #64748B);
+    pointer-events: none;
+  }
+
+  .search-field-input {
+    width: 100%;
+    padding-left: 40px !important;
+    min-height: 44px;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+  }
+
+  .map-help-text {
+    font-size: 0.75rem;
+    color: var(--color-ink-3);
+    margin: 6px 0 0;
+  }
+
+  .search-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #FFFFFF;
+    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.16));
+    border-radius: 12px;
+    box-shadow: 0 16px 36px -8px rgba(10, 19, 41, 0.18);
+    z-index: 50;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  :global(.suggestion-item) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    min-height: 44px;
+    padding: 10px 14px;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    transition: background-color 120ms ease;
+  }
+
+  :global(.suggestion-item:hover),
+  :global(.suggestion-item:focus-visible) {
+    background: var(--sara-sapphire-50, #F2F6FF);
+    outline: none;
+  }
+
+  :global(.suggestion-item__badge) {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    border-radius: 9999px;
+    background: rgba(14, 107, 71, 0.1);
+    color: #0E6B47;
+    flex-shrink: 0;
+  }
+
+  :global(.suggestion-empty) {
+    padding: 12px 16px;
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--color-ink-3);
+  }
+
+  /* Controles y Filtros */
+  .map-controls-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .map-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .map-chip {
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    min-height: 34px;
+    border-radius: 9999px;
+    border: 1px solid rgba(26, 54, 122, 0.14);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--sara-sapphire-800, #142B63);
+    cursor: pointer;
+    transition: all 140ms ease;
+  }
+
+  .map-chip:hover {
+    border-color: var(--sara-cyan-500, #159AB3);
+    background: #FFFFFF;
+  }
+
+  .map-chip.is-active {
+    background: #0E6B47;
+    border-color: #0E6B47;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(14, 107, 71, 0.25);
+  }
+
   .map-toolbar {
     display: flex;
-    align-items: end;
+    align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 8px;
   }
-  .map-toolbar label {
-    display: grid;
-    gap: 6px;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--color-ink-2);
-  }
-  .map-toolbar select { min-width: 230px; }
-  .map-status, .map-note {
-    font-size: 0.8125rem;
-    line-height: 1.6;
-    color: var(--color-ink-2);
-    margin: 12px 0;
-  }
-  .map-note a { text-decoration: underline; color: var(--sara-sapphire-600); }
-  .map-legend {
+
+  .map-camera-btns {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px 16px;
-    margin-top: 14px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    gap: 8px;
   }
-  .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .map-legend i { width: 12px; height: 12px; border-radius: 3px; }
+
+  .btn-map-action {
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: 0.78125rem;
+    font-weight: 700;
+    border: 1px solid rgba(26, 54, 122, 0.16);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--sara-sapphire-800, #142B63);
+    cursor: pointer;
+    transition: all 140ms ease;
+  }
+
+  .btn-map-action:hover {
+    background: #FFFFFF;
+    border-color: var(--sara-cyan-500, #159AB3);
+  }
+
+  .btn-map-action--primary {
+    background: var(--sara-sapphire-700, #1A367A);
+    border-color: var(--sara-sapphire-700, #1A367A);
+    color: #FFFFFF;
+  }
+
+  .btn-map-action--primary:hover {
+    background: var(--sara-sapphire-600, #224FA8);
+    border-color: var(--sara-sapphire-600, #224FA8);
+  }
+
+  .map-layer-select {
+    min-height: 38px !important;
+    padding: 6px 12px !important;
+    font-size: 0.78125rem !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  .map-status {
+    font-size: 0.78125rem;
+    color: var(--color-ink-2);
+    margin: 6px 0 10px;
+  }
+
+  /* Lienzo del Mapa */
+  .map-stage-frame {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1.5px solid rgba(26, 54, 122, 0.18);
+    box-shadow: 0 16px 36px -10px rgba(10, 19, 41, 0.14);
+    background: #E6ECF5;
+  }
 
   .interactive-map {
     width: 100%;
-    height: 60vh;
-    min-height: 420px;
-    background-color: var(--sara-sapphire-50);
-    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.14));
-    border-radius: var(--sara-radius-md, 12px);
-    box-shadow: var(--sara-shadow-glass-md);
+    height: clamp(420px, 64vh, 640px);
+    background-color: #E6ECF5;
     z-index: 10;
   }
-  :global(.leaflet-control-attribution) { max-width: 100%; font-size: 10px; }
 
-  /* Panel de Información Glass OS */
+  :global(.leaflet-control-attribution) {
+    max-width: 100%;
+    font-size: 10px;
+    background: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  /* Etiquetas permanentes del plano propio */
+  :global(.campus-div-icon) {
+    background: none !important;
+    border: none !important;
+  }
+
+  :global(.building-chip-label) {
+    display: none;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    color: #0A1329;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(14, 107, 71, 0.35);
+    border-radius: 6px;
+    padding: 1.5px 5px;
+    box-shadow: 0 2px 6px rgba(10, 19, 41, 0.12);
+    pointer-events: none;
+  }
+
+  .interactive-map.show-building-labels :global(.building-chip-label--major) {
+    display: inline-block;
+  }
+
+  .interactive-map.show-minor-labels :global(.building-chip-label--minor) {
+    display: inline-block;
+  }
+
+  :global(.campus-landmark) {
+    display: inline-block;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    pointer-events: none;
+    font-family: var(--font-mono, "JetBrains Mono", monospace);
+    border-radius: 9999px;
+  }
+
+  :global(.campus-landmark--zone) {
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #FFFFFF;
+  }
+
+  :global(.campus-landmark--fime) {
+    background: rgba(14, 107, 71, 0.9);
+  }
+  :global(.campus-landmark--fic) {
+    background: rgba(34, 79, 168, 0.82);
+  }
+  :global(.campus-landmark--fcq) {
+    background: rgba(217, 95, 24, 0.85);
+  }
+  :global(.campus-landmark--fayd) {
+    background: rgba(196, 61, 43, 0.85);
+  }
+
+  :global(.campus-landmark--entrance) {
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    background: #1A367A;
+    color: #FFFFFF;
+    border: 1.5px solid #FFFFFF;
+    box-shadow: 0 2px 6px rgba(10, 19, 41, 0.2);
+  }
+
+  :global(.campus-landmark--poi) {
+    display: none;
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    background: rgba(255, 255, 255, 0.88);
+    color: #334155;
+    border: 1px solid rgba(100, 116, 139, 0.35);
+  }
+
+  .interactive-map.show-detail-landmarks :global(.campus-landmark--poi) {
+    display: inline-block;
+  }
+
+  /* Leyenda y notas */
+  .map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-ink-2);
+  }
+
+  .map-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .map-legend i {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  .map-legend i.legend-line {
+    width: 16px;
+    height: 3px;
+    border-radius: 999px;
+    background: #94A3B8;
+  }
+
+  .map-note {
+    font-size: 0.75rem;
+    line-height: 1.55;
+    color: var(--color-ink-3);
+    margin: 10px 0 0;
+  }
+
+  .map-note a {
+    text-decoration: underline;
+    color: var(--sara-sapphire-600);
+  }
+
+  /* Panel Lateral Glass OS */
   .info-panel {
-    border-top: 3px solid var(--sara-sapphire-600, #224FA8);
-    background: var(--sara-glass-strong, rgba(255, 255, 255, 0.9));
+    background: var(--sara-glass-strong, rgba(255, 255, 255, 0.92));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.12));
+    border: 1px solid var(--sara-border-glass, rgba(26, 54, 122, 0.14));
     border-top: 3px solid var(--sara-sapphire-600, #224FA8);
-    border-radius: var(--sara-radius-lg, 16px);
+    border-radius: 16px;
     box-shadow: inset 0 1px 1px 0 var(--sara-rim-specular), var(--sara-shadow-glass-md);
-    padding: 24px;
+    padding: 22px;
   }
 
   .empty-state {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--color-ink-3);
-    line-height: 1.6;
-    font-style: italic;
-    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px 0 4px;
   }
 
-  /* Tooltip personalizado de Leaflet para SARA */
+  .empty-state__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(14, 107, 71, 0.1);
+    color: #0E6B47;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .empty-state__title {
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--sara-sapphire-950, #0A1329);
+    margin: 0;
+  }
+
+  .empty-state__desc {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--color-ink-2);
+    margin: 0;
+  }
+
+  .empty-state__quick {
+    margin-top: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-rule);
+  }
+
+  .quick-building-pills,
+  .room-pills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  :global(.room-pill) {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    min-height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(14, 107, 71, 0.28);
+    background: rgba(14, 107, 71, 0.07);
+    color: #0A3F29;
+    cursor: pointer;
+    transition: all 130ms ease;
+  }
+
+  :global(.room-pill:hover) {
+    background: rgba(14, 107, 71, 0.15);
+  }
+
+  :global(.room-pill.is-selected) {
+    background: #0E6B47;
+    border-color: #0E6B47;
+    color: #FFFFFF;
+  }
+
+  .panel-building-title {
+    font-family: var(--font-display, "Manrope", sans-serif);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-ink);
+    line-height: 1.18;
+    letter-spacing: -0.025em;
+    margin: 0;
+  }
+
+  .panel-building-sub {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.75rem;
+    color: var(--color-ink-3);
+    margin: 6px 0 0;
+  }
+
+  .panel-count-badge {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--color-ink-3);
+  }
+
+  .panel-classes-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  :global(.panel-class-card) {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(248, 250, 252, 0.9);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  :global(.panel-class-card__subject) {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-ink);
+    margin-bottom: 4px;
+  }
+
+  :global(.panel-class-card__meta) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: var(--color-ink-2);
+  }
+
+  :global(.panel-class-card__time) {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.6875rem;
+    color: var(--sara-sapphire-700, #1A367A);
+    font-weight: 600;
+  }
+
+  :global(.panel-class-card__sub) {
+    display: block;
+    font-size: 0.71875rem;
+    color: var(--color-ink-3);
+    margin-top: 4px;
+  }
+
+  :global(.panel-empty-classes) {
+    font-size: 0.8125rem;
+    color: var(--color-ink-3);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* Tooltip personalizado de Leaflet */
   :global(.leaflet-tooltip.swiss-tooltip) {
     background-color: var(--sara-sapphire-950, #0A1329) !important;
     color: #FFFFFF !important;
     border: 1px solid var(--sara-border-glass) !important;
-    border-radius: var(--sara-radius-sm, 6px) !important;
+    border-radius: 8px !important;
     font-family: var(--font-sans) !important;
     font-size: 0.75rem !important;
     font-weight: 700 !important;
-    letter-spacing: 0.02em !important;
     padding: 6px 10px !important;
     box-shadow: var(--sara-shadow-glass-md) !important;
   }
+
   :global(.leaflet-tooltip-top.swiss-tooltip::before) {
     border-top-color: var(--sara-sapphire-950, #0A1329) !important;
+  }
+
+  @media (max-width: 640px) {
+    .interactive-map {
+      height: 52vh;
+      min-height: 360px;
+    }
+    .map-layer-select-label,
+    .map-layer-select {
+      width: 100%;
+    }
   }
 </style>

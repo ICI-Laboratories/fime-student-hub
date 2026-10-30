@@ -4,7 +4,7 @@ import { cargarGrupoConProfesores, cargarExamenesDeGrupo, cargarHorarioDeGrupo }
 
 const student = Astro.locals.student;
 const activeGroupSlug =
-  student?.class_group_slug || Astro.url.searchParams.get("group") || "4-b-191";
+  Astro.url.searchParams.get("group") || Astro.cookies.get("pica_selected_group")?.value || student?.class_group_slug || "4-b-191";
 
 const now = new Date();
 
@@ -192,6 +192,10 @@ try {
 
   <script>
     function setupViews() {
+      const containerRoot = document.querySelector<HTMLElement>(".evaluations-layout");
+      if (!containerRoot || containerRoot.dataset.initialized) return;
+      containerRoot.dataset.initialized = "true";
+
       const buttons = document.querySelectorAll(".filter-link[data-view]");
       const items = document.querySelectorAll(".timeline__item");
       const monthGroups = document.querySelectorAll(".month-group");

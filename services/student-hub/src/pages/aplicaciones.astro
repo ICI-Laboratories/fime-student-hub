@@ -12,7 +12,7 @@ const count = apps.filter(app => matchesApp(app, query, category)).length;
 ---
 <InstitutionalLayout title="Aplicaciones" description="Herramientas académicas y aplicaciones disponibles para estudiantes de la Facultad de Ingeniería Mecánica y Eléctrica (FIME).">
   <section class="apps-catalog" aria-labelledby="catalog-title">
-    <p class="overline overline--secondary">PORTAL ACADÉMICO DIGITAL</p>
+    <p class="overline overline--secondary">STUDENTHUB · CATÁLOGO DIGITAL</p>
     <h1 id="catalog-title">Aplicaciones y recursos FIME</h1>
     <p class="catalog-intro">Encuentra tu horario, ubica un aula o elige una herramienta de estudio. Cada recurso indica el nivel de acceso disponible de forma transparente.</p>
 
@@ -79,37 +79,46 @@ const count = apps.filter(app => matchesApp(app, query, category)).length;
 </InstitutionalLayout>
 <script>
   import { matchesSearch, resultLabel } from '../lib/catalog.js';
-  const form = document.querySelector<HTMLFormElement>('.catalog-filters');
-  const input = document.querySelector<HTMLInputElement>('#app-search');
-  const select = document.querySelector<HTMLSelectElement>('#app-category');
-  const cards = [...document.querySelectorAll<HTMLElement>('#catalog-list > li')];
-  const status = document.querySelector<HTMLElement>('#catalog-count');
-  const empty = document.querySelector<HTMLElement>('#no-results');
-  let announcement: ReturnType<typeof setTimeout>;
 
-  function filterCatalog() {
-    if (!input || !select || !status || !empty) return;
-    let count = 0;
-    for (const card of cards) {
-      const matches = (!select.value || card.dataset.category === select.value) && matchesSearch(card.dataset.search, input.value);
-      card.hidden = !matches;
-      if (matches) count++;
+  function setupCatalog() {
+    const form = document.querySelector<HTMLFormElement>('.catalog-filters');
+    if (!form || form.dataset.initialized) return;
+    form.dataset.initialized = 'true';
+
+    const input = document.querySelector<HTMLInputElement>('#app-search');
+    const select = document.querySelector<HTMLSelectElement>('#app-category');
+    const cards = [...document.querySelectorAll<HTMLElement>('#catalog-list > li')];
+    const status = document.querySelector<HTMLElement>('#catalog-count');
+    const empty = document.querySelector<HTMLElement>('#no-results');
+    let announcement: ReturnType<typeof setTimeout>;
+
+    function filterCatalog() {
+      if (!input || !select || !status || !empty) return;
+      let count = 0;
+      for (const card of cards) {
+        const matches = (!select.value || card.dataset.category === select.value) && matchesSearch(card.dataset.search, input.value);
+        card.hidden = !matches;
+        if (matches) count++;
+      }
+      empty.hidden = count > 0;
+      clearTimeout(announcement);
+      announcement = setTimeout(() => { status.textContent = resultLabel(count); }, 200);
+      const url = new URL(window.location.href);
+      input.value.trim() ? url.searchParams.set('q', input.value.trim()) : url.searchParams.delete('q');
+      select.value ? url.searchParams.set('categoria', select.value) : url.searchParams.delete('categoria');
+      window.history.replaceState(null, '', url);
     }
-    empty.hidden = count > 0;
-    clearTimeout(announcement);
-    announcement = setTimeout(() => { status.textContent = resultLabel(count); }, 200);
-    const url = new URL(window.location.href);
-    input.value.trim() ? url.searchParams.set('q', input.value.trim()) : url.searchParams.delete('q');
-    select.value ? url.searchParams.set('categoria', select.value) : url.searchParams.delete('categoria');
-    window.history.replaceState(null, '', url);
+    input?.addEventListener('input', filterCatalog);
+    select?.addEventListener('change', filterCatalog);
+    form.addEventListener('submit', event => { event.preventDefault(); filterCatalog(); });
+    document.querySelector('#clear-catalog')?.addEventListener('click', event => {
+      if (!input || !select) return;
+      event.preventDefault(); input.value = ''; select.value = ''; filterCatalog(); input.focus();
+    });
   }
-  input?.addEventListener('input', filterCatalog);
-  select?.addEventListener('change', filterCatalog);
-  form?.addEventListener('submit', event => { event.preventDefault(); filterCatalog(); });
-  document.querySelector('#clear-catalog')?.addEventListener('click', event => {
-    if (!input || !select) return;
-    event.preventDefault(); input.value = ''; select.value = ''; filterCatalog(); input.focus();
-  });
+
+  setupCatalog();
+  document.addEventListener('astro:page-load', setupCatalog);
 </script>
 <style>
   .apps-catalog { max-width: 1080px; margin: auto; }

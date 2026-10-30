@@ -11,7 +11,7 @@ interface Props {
 
 const {
   title,
-  description = "StudentHUB — Consulta de materias, horarios, docentes y aulas en la Universidad de Colima.",
+  description = "StudentHub FIME — Consulta de horarios, materias, docentes y mapa del campus Coquimatlán.",
   fromLanding: fromLandingProp,
 } = Astro.props;
 
@@ -65,9 +65,9 @@ const moreIsActive = [
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="generator" content={Astro.generator} />
-    <title>{title} | {isFromLanding ? "FIMEBot" : "StudentHUB"}</title>
+    <title>{title} | StudentHub FIME</title>
     <meta name="description" content={description} />
-    <meta property="og:title" content={`${title} | ${isFromLanding ? "FIMEBot" : "StudentHUB"}`} />
+    <meta property="og:title" content={`${title} | StudentHub FIME`} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="/vectors/logos/fime_escudo_ucol.svg" />
@@ -87,18 +87,18 @@ const moreIsActive = [
         <a
           href="/"
           class="wordmark"
-          aria-label="Facultad de Ingeniería Mecánica y Eléctrica — Inicio"
+          aria-label="StudentHub FIME — Ir al inicio"
         >
           <div class="wordmark__brand-group">
-            <img src="/vectors/logos/fime_escudo_ucol.svg" alt="Escudo Universidad de Colima" class="wordmark__logo" width="32" height="32" aria-hidden="true" />
+            <img src="/vectors/logos/fime_escudo_ucol.svg" alt="" class="wordmark__logo" width="30" height="30" aria-hidden="true" />
             <div class="wordmark__text">
-              <span class="wordmark__overline">Universidad de Colima · FIME</span>
+              <span class="wordmark__overline">FIME · Campus Coquimatlán</span>
               <span class="wordmark__title">
-                {isLanding ? <>FIME<em>Hub</em></> : <>Student<em>HUB</em></>}
+                Student<em>Hub</em>
               </span>
             </div>
           </div>
-          <span class="wordmark__badge">{isLanding ? "Portal Oficial" : "Horarios y Aulas"}</span>
+          <span class="wordmark__badge">Guía Estudiantil</span>
         </a>
 
         <nav class="desktop-navigation" aria-label="Navegación principal">
@@ -144,10 +144,10 @@ const moreIsActive = [
     <footer class="site-footer">
       <div class="footer-inner">
         <div class="footer-brand">
-          <img src="/vectors/logos/fime_escudo_ucol.svg" alt="Escudo Universidad de Colima" width="22" height="22" aria-hidden="true" />
-          <span>FIME · Universidad de Colima</span>
+          <img src="/vectors/logos/fime_escudo_ucol.svg" alt="" width="20" height="20" aria-hidden="true" />
+          <span>StudentHub · Comunidad Académica FIME</span>
         </div>
-        <span>Portal Estudiantil · StudentHUB</span>
+        <span>Plataforma estudiantil de consulta (no oficial) · Campus Coquimatlán</span>
       </div>
     </footer>
 
@@ -181,8 +181,8 @@ const moreIsActive = [
     <dialog id="mobile-drawer" aria-labelledby="drawer-title">
       <div class="drawer-heading">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <img src="/vectors/logos/fime_escudo_ucol.svg" alt="Escudo Universidad de Colima" width="20" height="20" aria-hidden="true" />
-          <h2 id="drawer-title">Menú académico FIME</h2>
+          <img src="/vectors/logos/fime_escudo_ucol.svg" alt="" width="20" height="20" aria-hidden="true" />
+          <h2 id="drawer-title">StudentHub · Menú</h2>
         </div>
         <button type="button" id="btn-close-drawer" aria-label="Cerrar menú">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -578,13 +578,21 @@ const moreIsActive = [
       padding-bottom: calc(68px + env(safe-area-inset-bottom));
     }
     .header-inner {
-      padding: 10px 16px;
+      padding: 8px 16px;
+      min-height: 56px;
+      gap: 10px;
     }
     .desktop-navigation {
       display: none;
     }
-    .btn-header-chat, .btn-change-group-header {
+    .btn-change-group-header {
       display: none;
+    }
+    .btn-header-chat {
+      min-height: 38px;
+      padding: 0 12px;
+      font-size: 0.75rem;
+      border-radius: 9999px;
     }
     .mobile-nav {
       display: flex;
@@ -604,8 +612,11 @@ const moreIsActive = [
     }
   }
   @media (max-width: 767px) {
+    .wordmark__badge {
+      display: none;
+    }
     #main-content {
-      padding: 24px 16px 48px;
+      padding: 20px 16px 48px;
     }
   }
 </style>

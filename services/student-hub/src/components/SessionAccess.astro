@@ -4,13 +4,13 @@ const loginUrl = `/session/login?${new URLSearchParams({ return_to: destination 
 ---
 <section class="sara-access" data-sara-session aria-label="Cuenta SARA">
   <div class="sara-access__badge" aria-hidden="true">
-    <img src="/vectors/logos/fime_escudo_ucol.svg" alt="" width="16" height="16" />
+    <img src="/vectors/logos/fime_escudo_ucol.svg" alt="" width="14" height="14" />
   </div>
-  <p class="sara-access__status" data-sara-status role="status" aria-live="polite">Tu cuenta SARA</p>
+  <p class="sara-access__status" data-sara-status role="status" aria-live="polite">Acceso libre · Cuenta SARA opcional</p>
   <div class="sara-access__actions">
     <a href={loginUrl} data-sara-access-link>Iniciar sesión</a>
-    <button type="button" data-sara-logout hidden>Salir del portal</button>
-    <button type="button" data-sara-retry hidden>Reintentar acceso</button>
+    <button type="button" data-sara-logout hidden>Cerrar sesión</button>
+    <button type="button" data-sara-retry hidden>Reintentar</button>
   </div>
 </section>
 <script>
@@ -22,7 +22,7 @@ const loginUrl = `/session/login?${new URLSearchParams({ return_to: destination 
   .sara-access {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 6px 24px;
+    padding: 4px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -36,13 +36,14 @@ const loginUrl = `/session/login?${new URLSearchParams({ return_to: destination 
     display: flex;
     align-items: center;
     opacity: 0.85;
+    flex-shrink: 0;
   }
   .sara-access__status {
     margin: 0;
     min-width: 0;
     flex: 1;
-    font-size: 0.8125rem;
-    line-height: 1.5;
+    font-size: 0.75rem;
+    line-height: 1.4;
     color: var(--sara-text-secondary, #475569);
     overflow-wrap: anywhere;
   }
@@ -51,19 +52,19 @@ const loginUrl = `/session/login?${new URLSearchParams({ return_to: destination 
     align-items: center;
     justify-content: flex-end;
     flex-wrap: wrap;
-    gap: 4px 16px;
+    gap: 4px 12px;
     flex-shrink: 0;
   }
   a, button {
     display: inline-flex;
     align-items: center;
-    min-height: 44px;
-    padding: 6px 0;
+    min-height: 32px;
+    padding: 4px 0;
     background: none;
     border: 0;
     color: var(--sara-sapphire-600, #224FA8);
     font-family: var(--sara-font-ui, "Inter", sans-serif);
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -87,12 +88,17 @@ const loginUrl = `/session/login?${new URLSearchParams({ return_to: destination 
   }
   @media (max-width: 640px) {
     .sara-access {
-      padding: 6px 16px;
-      flex-wrap: wrap;
-      gap: 0 12px;
+      padding: 4px 16px;
+      gap: 2px 10px;
     }
-    .sara-access__actions {
-      flex-shrink: 1;
+    .sara-access__badge {
+      display: none;
+    }
+    .sara-access__status {
+      font-size: 0.6875rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 </style>

@@ -33,13 +33,16 @@ export function setupSessionAccess() {
     logout.hidden = !user;
   }
   function renderSession() {
-    status.textContent = user ? `Hola, ${user.name || user.email || 'bienvenido'}.` : 'Tu cuenta SARA';
+    status.textContent = user ? `Hola, ${user.name || user.email || 'bienvenido'}.` : 'Acceso libre · Cuenta SARA opcional';
     retry.hidden = true;
     updateLinks();
   }
-  function unavailable(message = 'No pudimos comprobar tu acceso. Intenta de nuevo.') {
-    const greeting = user ? `Hola, ${user.name || user.email || 'bienvenido'}. ` : '';
-    status.textContent = greeting + message;
+  function unavailable(message?: string) {
+    if (user) {
+      status.textContent = `Hola, ${user.name || user.email || 'bienvenido'}. ${message || 'No pudimos comprobar tu acceso. Intenta de nuevo.'}`;
+    } else {
+      status.textContent = message || 'Acceso libre sin cuenta · Sesión SARA temporalmente no disponible';
+    }
     retry.hidden = false;
   }
   const isCurrent = (run: number) => run === epoch && !lifecycle.signal.aborted;
